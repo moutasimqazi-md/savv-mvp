@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Synthetic fixture: unsupported/changed layout</title></head>
+<body>
+<main data-savv-page="unknown">
+  <h1>We've redesigned this page</h1>
+  <p>This fixture simulates a marketplace layout change that neither parser
+     recognizes. supportsCurrentPage() must return false for both parsers,
+     and the runner must respond with the safe "could not safely read this
+     page version" error rather than guessing at a structure.</p>
+</main>
+</body>
+</html>

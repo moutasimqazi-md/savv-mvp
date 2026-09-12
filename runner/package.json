@@ -1,0 +1,20 @@
+{
+    "name": "savv-runner",
+    "version": "0.1.0",
+    "private": true,
+    "type": "module",
+    "description": "Isolated Playwright/Chromium runner for Savv MVP demonstration imports. Binds to 127.0.0.1 only.",
+    "engines": {
+        "node": ">=22"
+    },
+    "scripts": {
+        "start": "node src/server.js",
+        "postinstall": "playwright install chromium",
+        "test": "node --test tests/"
+    },
+    "dependencies": {
+        "dotenv": "^16.4.5",
+        "express": "^4.21.1",
+        "playwright": "^1.48.0"
+    }
+}
