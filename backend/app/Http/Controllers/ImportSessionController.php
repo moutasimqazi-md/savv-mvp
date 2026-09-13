@@ -11,6 +11,7 @@ use Savv\Jobs\ConfirmImportSession;
 use Savv\Models\ImportPreview;
 use Savv\Models\ImportSession;
 use Savv\Services\ImportSessionService;
+use Savv\Services\RunnerClient;
 
 class ImportSessionController extends Controller
 {
@@ -27,20 +28,28 @@ class ImportSessionController extends Controller
         return view('imports.show', ['importSession' => $importSession]);
     }
 
-    public function browser(Request $request, ImportSession $importSession): View
+    public function browser(Request $request, ImportSession $importSession, RunnerClient $runner): View
     {
         $this->authorize('view', $importSession);
 
         $viewToken = null;
+        $streamEnabled = (bool) config('savv.runner.stream_enabled');
 
-        if (in_array($importSession->status, [ImportSessionStatus::Starting, ImportSessionStatus::Ready, ImportSessionStatus::AwaitingLogin, ImportSessionStatus::ReadyToScan], true)) {
-            $viewToken = $importSession->issueViewToken((int) config('savv.import_session.view_token_ttl_seconds', 60));
+        if ($streamEnabled && in_array($importSession->status, [ImportSessionStatus::Starting, ImportSessionStatus::Ready, ImportSessionStatus::AwaitingLogin, ImportSessionStatus::ReadyToScan], true)) {
+            $ttl = (int) config('savv.import_session.view_token_ttl_seconds', 60);
+            $viewToken = $importSession->issueViewToken($ttl);
+
+            try {
+                $runner->registerViewToken($importSession->public_id, $viewToken, $ttl);
+            } catch (\Throwable) {
+                $viewToken = null;
+            }
         }
 
         return view('imports.browser', [
             'importSession' => $importSession,
             'viewToken' => $viewToken,
-            'streamEnabled' => (bool) config('savv.runner.stream_enabled'),
+            'streamEnabled' => $streamEnabled,
         ]);
     }
 

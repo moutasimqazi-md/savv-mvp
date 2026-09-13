@@ -35,9 +35,10 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(ImportBatch::class, ImportBatchPolicy::class);
         Gate::policy(ImportSession::class, ImportSessionPolicy::class);
 
-        RateLimiter::for('login', function (Request $request) {
-            return Limit::perMinute(5)->by(strtolower((string) $request->input('email')).'|'.$request->ip());
-        });
+        // Login throttling is handled inside AuthenticatedSessionController
+        // (keyed by email+IP, returning a form validation error) rather than
+        // a throttle:* middleware, so a locked-out user sees a normal error
+        // instead of a bare 429 response.
 
         // Starting an isolated Chromium process is expensive; keep this tight.
         RateLimiter::for('import-session-start', function (Request $request) {

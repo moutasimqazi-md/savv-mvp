@@ -2,7 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { chromium } from 'playwright';
 import { allocateDisplay, releaseDisplay } from './display/displayAllocator.js';
-import { startStreamingStack } from './display/streamingStack.js';
+import { startStreamingStack, writeVncToken, removeVncToken } from './display/streamingStack.js';
 import { isNavigationAllowed, allowedHostsFor } from './security/navigationGuard.js';
 import { parserFor } from './parsers/registry.js';
 
@@ -42,7 +42,7 @@ export async function createSession(sessionId, provider) {
 
     if (!HEADED) {
         displayNumber = allocateDisplay();
-        streamingStack = startStreamingStack({ displayNumber, wsPort: 6900 + displayNumber });
+        streamingStack = startStreamingStack({ displayNumber });
         launchEnv.DISPLAY = `:${displayNumber}`;
     }
 
@@ -64,6 +64,8 @@ export async function createSession(sessionId, provider) {
         createdAt: Date.now(),
         lastActivityAt: Date.now(),
         lifetimeTimer: null,
+        activeViewToken: null,
+        viewTokenExpiryTimer: null,
     };
 
     record.lifetimeTimer = setTimeout(() => {
@@ -151,11 +153,43 @@ export async function scanSession(sessionId) {
     return { orders, parserVersion: parser.getVersion() };
 }
 
+/**
+ * Registers this session's view token with the shared websockify broker
+ * (see docs/deployment-ubuntu.md) so a viewer holding it can connect to
+ * this session's VNC port for `ttlSeconds`. No-op in headed-local mode,
+ * where there is no streaming stack to connect to.
+ */
+export async function registerViewToken(sessionId, token, ttlSeconds) {
+    const record = requireSession(sessionId);
+
+    if (!record.streamingStack) {
+        return { registered: false };
+    }
+
+    if (record.activeViewToken) {
+        await removeVncToken(record.activeViewToken).catch(() => {});
+        clearTimeout(record.viewTokenExpiryTimer);
+    }
+
+    await writeVncToken(token, record.streamingStack.vncPort);
+    record.activeViewToken = token;
+    record.viewTokenExpiryTimer = setTimeout(() => {
+        removeVncToken(token).catch(() => {});
+        if (record.activeViewToken === token) record.activeViewToken = null;
+    }, ttlSeconds * 1000);
+
+    return { registered: true };
+}
+
 export async function stopSession(sessionId) {
     const record = sessions.get(sessionId);
     if (!record) return { status: 'not_found' };
 
     clearTimeout(record.lifetimeTimer);
+    clearTimeout(record.viewTokenExpiryTimer);
+    if (record.activeViewToken) {
+        await removeVncToken(record.activeViewToken).catch(() => {});
+    }
 
     try {
         await record.context.close();

@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import {
-    createSession, getSessionStatus, scanSession, stopSession, getSessionHealth,
+    createSession, getSessionStatus, scanSession, stopSession, getSessionHealth, registerViewToken,
 } from '../sessionManager.js';
 
 export const sessionsRouter = Router();
@@ -31,6 +31,21 @@ sessionsRouter.get('/:id', (req, res) => {
 sessionsRouter.post('/:id/scan', async (req, res) => {
     try {
         const result = await scanSession(req.params.id);
+        res.json(result);
+    } catch (e) {
+        res.status(404).json({ error: 'session_not_found', message: safeMessage(e) });
+    }
+});
+
+sessionsRouter.post('/:id/view-token', async (req, res) => {
+    const { token, ttlSeconds } = req.body ?? {};
+
+    if (typeof token !== 'string' || !/^[A-Za-z0-9]{16,64}$/.test(token)) {
+        return res.status(400).json({ error: 'invalid_token' });
+    }
+
+    try {
+        const result = await registerViewToken(req.params.id, token, Number(ttlSeconds) || 60);
         res.json(result);
     } catch (e) {
         res.status(404).json({ error: 'session_not_found', message: safeMessage(e) });

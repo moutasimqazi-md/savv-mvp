@@ -20,12 +20,14 @@ backend/bootstrap/cache/*
 backend/public/build/
 backend/public/hot
 
-# Extension
-extension/node_modules/
-extension/dist/
+# Runner
+runner/node_modules/
+runner/.env
+runner/tmp/
+runner/runner.log
+runner/websockify.log
 
 # General
 .DS_Store
 Thumbs.db
 *.log
-/tests/node_modules/

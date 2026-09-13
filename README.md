@@ -1,13 +1,14 @@
 # Savv MVP
 
-Savv MVP lets a signed-in user bring their own Amazon India and Flipkart order,
-shipment, return, cancellation, and refund history into one dashboard — imported
-only from what the **Savv Companion** browser extension can see on the page
-after the user manually signs in and presses "Scan this page" themselves.
+Savv MVP is a **demonstration**, not an official Amazon or Flipkart
+integration. A signed-in user starts a temporary, isolated remote browser
+from the Savv website, logs into Amazon India or Flipkart **directly and
+personally** inside it, and imports the order, shipment, return, and refund
+information that page visibly renders into a Laravel dashboard.
 
 Savv MVP never asks for a marketplace password or OTP, never touches
 marketplace cookies/sessions/tokens, and never automates a marketplace
-account. See [docs/extension-security.md](docs/extension-security.md) and
+account. See [docs/runner-security.md](docs/runner-security.md) and
 [docs/privacy-model.md](docs/privacy-model.md) for the full boundary.
 
 > Order information reflects the most recent user-authorized import. Verify
@@ -17,21 +18,20 @@ account. See [docs/extension-security.md](docs/extension-security.md) and
 ## Project layout
 
 ```
-/backend     Laravel 12 application (PHP 8.4, MariaDB 10.11.19)
-/extension   Manifest V3 "Savv Companion" browser extension
-/docs        Architecture, security, deployment, and API documentation
-/tests       Extension parser tests and synthetic HTML fixtures
+/backend   Laravel 12 application (PHP 8.4, MariaDB 10.11.19)
+/runner    Node.js 22 + Playwright isolated-browser service
+/docs      Architecture, security, deployment, and API documentation
 ```
 
-Backend-specific PHPUnit tests live under `backend/tests` (standard Laravel
-layout). The top-level `/tests` directory holds parser-level tests for the
-browser extension, which run under Node's built-in test runner and never
-touch the Laravel app.
+Backend tests live in `backend/tests` (PHPUnit, against MariaDB). Runner
+tests live in `runner/tests` (Node's built-in test runner, driving a real
+headless Chromium against the synthetic fixtures in `runner/fixtures`).
 
 ## Quick start (Windows development)
 
-See [docs/deployment-windows.md](docs/deployment-windows.md) for full detail.
-Short version:
+See [docs/deployment-windows.md](docs/deployment-windows.md) for full
+detail - Chromium runs **headed** locally (a visible window opens on your
+own screen; there's no streaming/noVNC in local dev). Short version:
 
 ```powershell
 cd backend
@@ -44,19 +44,34 @@ npm run build
 php artisan serve
 ```
 
-In a second terminal:
+In a second terminal (queue worker):
 
 ```powershell
 cd backend
 php artisan queue:work database --queue=imports,default --sleep=3 --tries=3 --timeout=120
 ```
 
-Then load `extension/` as an unpacked extension in Chrome or Edge
-(`chrome://extensions` → Developer mode → "Load unpacked").
+In a third terminal (the runner):
 
-## Ubuntu production
+```powershell
+cd runner
+copy .env.example .env
+npm install
+npm start
+```
 
-See [docs/deployment-ubuntu.md](docs/deployment-ubuntu.md).
+## Ubuntu demonstration deployment
+
+Full streamed setup (Nginx, Xvfb + x11vnc + a shared noVNC/websockify
+broker, Supervisor, systemd cron). See
+[docs/deployment-ubuntu.md](docs/deployment-ubuntu.md).
+
+## cPanel
+
+Plain shared cPanel hosting **cannot** run the isolated-browser runner (no
+root, no persistent daemons, no system packages). See
+[docs/deployment-cpanel.md](docs/deployment-cpanel.md) for what does and
+doesn't work, and the supported VPS+WHM path.
 
 ## Database
 
@@ -70,20 +85,27 @@ database/user creation SQL an administrator must run.
 - [docs/architecture.md](docs/architecture.md)
 - [docs/database.md](docs/database.md)
 - [docs/admin-database-setup.md](docs/admin-database-setup.md)
-- [docs/extension-security.md](docs/extension-security.md)
+- [docs/runner-security.md](docs/runner-security.md)
 - [docs/parser-maintenance.md](docs/parser-maintenance.md)
 - [docs/privacy-model.md](docs/privacy-model.md)
 - [docs/deployment-windows.md](docs/deployment-windows.md)
 - [docs/deployment-ubuntu.md](docs/deployment-ubuntu.md)
+- [docs/deployment-cpanel.md](docs/deployment-cpanel.md)
 - [docs/api-contract.md](docs/api-contract.md)
 - [docs/limitations.md](docs/limitations.md)
 
 ## Status
 
-This repository was scaffolded by hand (no `composer create-project` was run,
-because this environment has no PHP/Composer/Node/MariaDB installed). Before
-first run you must install the toolchain described in
-[docs/deployment-windows.md](docs/deployment-windows.md) or
+This repository was scaffolded by hand (no `composer create-project` /
+`npm create` was run, because this environment has no PHP/Composer/Node/
+MariaDB installed). Before first run you must install the toolchain
+described in [docs/deployment-windows.md](docs/deployment-windows.md) or
 [docs/deployment-ubuntu.md](docs/deployment-ubuntu.md), then run
-`composer install` to generate `vendor/` and the autoloader. Nothing here has
-been executed or test-run yet — see [docs/limitations.md](docs/limitations.md).
+`composer install` / `npm install` in both `backend/` and `runner/` to
+generate `vendor/`/`node_modules/`. Nothing here has been executed or
+test-run yet — see [docs/limitations.md](docs/limitations.md).
+
+The Amazon India and Flipkart parsers only recognize the synthetic fixtures
+in `runner/fixtures/` today (invented data, invented markup) - see
+[docs/parser-maintenance.md](docs/parser-maintenance.md) before pointing
+either parser at a real marketplace page.

@@ -19,9 +19,11 @@ Route::middleware('guest')->group(function () {
     Route::post('/register', [RegisteredUserController::class, 'store']);
 
     Route::get('/login', [AuthenticatedSessionController::class, 'create'])->name('login');
-    Route::post('/login', [AuthenticatedSessionController::class, 'store'])
-        ->middleware('throttle:login')
-        ->name('login.store');
+    // Login rate limiting is handled inside the controller (keyed by
+    // email+IP, returning a normal validation error) rather than by a
+    // throttle:* middleware, so a locked-out user sees a form error
+    // instead of a bare 429 response.
+    Route::post('/login', [AuthenticatedSessionController::class, 'store'])->name('login.store');
 });
 
 Route::middleware('auth')->group(function () {

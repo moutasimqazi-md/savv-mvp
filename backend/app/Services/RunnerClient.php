@@ -47,6 +47,20 @@ final class RunnerClient
         return $this->post("/internal/sessions/{$sessionId}/scan", []);
     }
 
+    /**
+     * Registers a single-use, short-lived view token with the runner's
+     * shared websockify broker so the noVNC viewer can connect to this
+     * session's isolated browser. No-op on the runner side in headed-local
+     * (Windows/dev) mode - see runner/src/sessionManager.js.
+     */
+    public function registerViewToken(string $sessionId, string $token, int $ttlSeconds): array
+    {
+        return $this->post("/internal/sessions/{$sessionId}/view-token", [
+            'token' => $token,
+            'ttlSeconds' => $ttlSeconds,
+        ]);
+    }
+
     public function stop(string $sessionId): array
     {
         return $this->post("/internal/sessions/{$sessionId}/stop", []);
