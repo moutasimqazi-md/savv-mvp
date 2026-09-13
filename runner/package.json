@@ -10,7 +10,7 @@
     "scripts": {
         "start": "node src/server.js",
         "postinstall": "playwright install chromium",
-        "test": "node --test tests/"
+        "test": "node --test"
     },
     "dependencies": {
         "dotenv": "^16.4.5",

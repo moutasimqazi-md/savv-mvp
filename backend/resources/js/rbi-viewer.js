@@ -1,4 +1,4 @@
-import RFB from '@novnc/novnc/core/rfb.js';
+import RFB from '@novnc/novnc';
 
 /**
  * Connects the noVNC canvas to the same-origin websocket proxy Nginx exposes

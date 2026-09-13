@@ -8,4 +8,9 @@ export default defineConfig({
             refresh: true,
         }),
     ],
+    // @novnc/novnc uses top-level await internally, which needs a newer
+    // target than Vite's default (chrome87/es2020/etc).
+    build: {
+        target: 'es2022',
+    },
 });

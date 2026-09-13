@@ -81,10 +81,22 @@ final class ImportSessionService
             return $session;
         }
 
-        $reportedStatus = ImportSessionStatus::tryFrom($result['status'] ?? '');
-
-        if ($reportedStatus !== null && $reportedStatus !== $session->status) {
-            $session->forceFill(['status' => $reportedStatus])->save();
+        // The runner's status vocabulary ('starting'/'ready'/'scanning'/
+        // 'failed'/'not_found') describes its own process lifecycle, not
+        // Laravel's richer 14-state business state machine - several
+        // strings are spelled the same as ImportSessionStatus cases but
+        // mean something narrower (e.g. the runner's internal 'ready'
+        // just means "browser idle", including right after a scan
+        // completes - it is not the same as our formal Ready state).
+        // Laravel's own jobs (ScanImportSession, ConfirmImportSession,
+        // TerminateImportSession) are the sole authority for advancing
+        // status during active processing. The only thing worth reacting
+        // to here is the runner reporting the process is simply gone.
+        if (($result['status'] ?? null) === 'not_found' && ! $session->status->isTerminal()) {
+            $session->forceFill([
+                'status' => ImportSessionStatus::Failed,
+                'safe_error_code' => 'runner_process_lost',
+            ])->save();
         }
 
         $session->touchActivity();

@@ -3,6 +3,7 @@
 namespace Savv\Tests\Feature\Auth;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Hash;
 use Savv\Models\User;
 use Savv\Tests\TestCase;
 
@@ -40,9 +41,11 @@ class RegistrationAndLoginTest extends TestCase
 
     public function test_a_user_can_log_in_with_correct_credentials(): void
     {
-        $user = User::factory()->create(['password' => bcrypt('correct-password')]);
-        // Force a real Argon2id hash via the app's configured hasher.
-        $user->forceFill(['password' => \Illuminate\Support\Facades\Hash::make('correct-password')])->save();
+        // Use Hash::make() (respects config/hashing.php's Argon2id driver),
+        // never the bcrypt() helper - it's hardcoded to bcrypt and the
+        // User model's 'hashed' cast rejects a hash that doesn't match the
+        // currently configured driver.
+        $user = User::factory()->create(['password' => Hash::make('correct-password')]);
 
         $response = $this->post('/login', ['email' => $user->email, 'password' => 'correct-password']);
 
@@ -52,8 +55,7 @@ class RegistrationAndLoginTest extends TestCase
 
     public function test_login_fails_with_wrong_password(): void
     {
-        $user = User::factory()->create();
-        $user->forceFill(['password' => \Illuminate\Support\Facades\Hash::make('correct-password')])->save();
+        $user = User::factory()->create(['password' => Hash::make('correct-password')]);
 
         $response = $this->post('/login', ['email' => $user->email, 'password' => 'wrong-password']);
 
@@ -63,8 +65,7 @@ class RegistrationAndLoginTest extends TestCase
 
     public function test_login_is_rate_limited_after_repeated_failures(): void
     {
-        $user = User::factory()->create();
-        $user->forceFill(['password' => \Illuminate\Support\Facades\Hash::make('correct-password')])->save();
+        $user = User::factory()->create(['password' => Hash::make('correct-password')]);
 
         for ($i = 0; $i < 5; $i++) {
             $this->post('/login', ['email' => $user->email, 'password' => 'wrong-password']);

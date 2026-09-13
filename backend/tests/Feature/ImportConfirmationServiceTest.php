@@ -21,7 +21,7 @@ class ImportConfirmationServiceTest extends TestCase
 {
     use RefreshDatabase;
 
-    private function session(User $user): ImportSession
+    private function makeImportSession(User $user): ImportSession
     {
         return ImportSession::create([
             'user_id' => $user->id,
@@ -69,7 +69,7 @@ class ImportConfirmationServiceTest extends TestCase
     public function test_confirming_a_preview_creates_an_order_and_its_items(): void
     {
         $user = User::factory()->create();
-        $session = $this->session($user);
+        $session = $this->makeImportSession($user);
         $preview = $this->preview($session, $this->baseOrderPayload());
 
         app(ImportConfirmationService::class)->confirm($session, new Collection([$preview]));
@@ -84,12 +84,12 @@ class ImportConfirmationServiceTest extends TestCase
     {
         $user = User::factory()->create();
 
-        $session1 = $this->session($user);
+        $session1 = $this->makeImportSession($user);
         app(ImportConfirmationService::class)->confirm($session1, new Collection([
             $this->preview($session1, $this->baseOrderPayload(['original_status' => 'Shipped', 'normalized_status' => 'shipped'])),
         ]));
 
-        $session2 = $this->session($user);
+        $session2 = $this->makeImportSession($user);
         app(ImportConfirmationService::class)->confirm($session2, new Collection([
             $this->preview($session2, $this->baseOrderPayload(['original_status' => 'Delivered', 'normalized_status' => 'delivered'])),
         ]));
@@ -103,7 +103,7 @@ class ImportConfirmationServiceTest extends TestCase
     {
         $user = User::factory()->create();
 
-        $session1 = $this->session($user);
+        $session1 = $this->makeImportSession($user);
         app(ImportConfirmationService::class)->confirm($session1, new Collection([
             $this->preview($session1, $this->baseOrderPayload(['total' => 149900])),
         ]));
@@ -120,7 +120,7 @@ class ImportConfirmationServiceTest extends TestCase
         ]);
         $order->forceFill(['total_minor' => 99900])->save();
 
-        $session2 = $this->session($user);
+        $session2 = $this->makeImportSession($user);
         app(ImportConfirmationService::class)->confirm($session2, new Collection([
             $this->preview($session2, $this->baseOrderPayload(['total' => 149900])),
         ]));
@@ -132,12 +132,12 @@ class ImportConfirmationServiceTest extends TestCase
     {
         $user = User::factory()->create();
 
-        $session1 = $this->session($user);
+        $session1 = $this->makeImportSession($user);
         app(ImportConfirmationService::class)->confirm($session1, new Collection([
             $this->preview($session1, $this->baseOrderPayload(['original_status' => 'Delivered'])),
         ]));
 
-        $session2 = $this->session($user);
+        $session2 = $this->makeImportSession($user);
         app(ImportConfirmationService::class)->confirm($session2, new Collection([
             $this->preview($session2, $this->baseOrderPayload(['original_status' => null])),
         ]));
@@ -156,12 +156,12 @@ class ImportConfirmationServiceTest extends TestCase
             'normalized_status' => 'shipped',
         ];
 
-        $session1 = $this->session($user);
+        $session1 = $this->makeImportSession($user);
         app(ImportConfirmationService::class)->confirm($session1, new Collection([
             $this->preview($session1, $this->baseOrderPayload(['shipments' => [$shipmentPayload]])),
         ]));
 
-        $session2 = $this->session($user);
+        $session2 = $this->makeImportSession($user);
         app(ImportConfirmationService::class)->confirm($session2, new Collection([
             $this->preview($session2, $this->baseOrderPayload(['shipments' => [$shipmentPayload]])),
         ]));
@@ -176,12 +176,12 @@ class ImportConfirmationServiceTest extends TestCase
     {
         $user = User::factory()->create();
 
-        $session1 = $this->session($user);
+        $session1 = $this->makeImportSession($user);
         app(ImportConfirmationService::class)->confirm($session1, new Collection([
             $this->preview($session1, $this->baseOrderPayload()),
         ]));
 
-        $session2 = $this->session($user);
+        $session2 = $this->makeImportSession($user);
         app(ImportConfirmationService::class)->confirm($session2, new Collection([
             $this->preview($session2, $this->baseOrderPayload()),
         ]));

@@ -18,9 +18,29 @@ export function cleanText(value, maxLength = MAX_FIELD_LENGTH) {
     return collapsed.slice(0, maxLength);
 }
 
-const ALLOWED_HOSTS = new Set(['www.amazon.in', 'amazon.in', 'www.flipkart.com', 'flipkart.com']);
+// Hosts a clickable link (order/product/invoice) may point to - kept to the
+// primary marketplace domains only, since these are what the user's browser
+// actually navigates to from "Open on Amazon/Flipkart" buttons.
+const ALLOWED_LINK_HOSTS = new Set(['www.amazon.in', 'amazon.in', 'www.flipkart.com', 'flipkart.com']);
 
-export function sanitizeUrlOrNull(value) {
+// Real product images are served from separate CDN subdomains, not the
+// primary site - e.g. a real amazon.in order-history page's <img> src is
+// m.media-amazon.com, never www.amazon.in. Images are never navigated to
+// by clicking, so a slightly wider allowlist is safe here without
+// loosening the link allowlist above.
+const ALLOWED_IMAGE_HOSTS = new Set([
+    ...ALLOWED_LINK_HOSTS,
+    'm.media-amazon.com',
+    'images-na.ssl-images-amazon.com',
+    'images-eu.ssl-images-amazon.com',
+    'images-fe.ssl-images-amazon.com',
+    'rukminim1.flixcart.com',
+    'rukminim2.flixcart.com',
+    'rukminim3.flixcart.com',
+    'img1a.flixcart.com',
+]);
+
+export function sanitizeUrlOrNull(value, { isImage = false } = {}) {
     if (!value || typeof value !== 'string') return null;
     if (value.length > 2048) return null;
 
@@ -32,11 +52,28 @@ export function sanitizeUrlOrNull(value) {
     }
 
     if (url.protocol !== 'https:') return null;
-    if (!ALLOWED_HOSTS.has(url.hostname.toLowerCase())) return null;
+
+    const hosts = isImage ? ALLOWED_IMAGE_HOSTS : ALLOWED_LINK_HOSTS;
+    if (!hosts.has(url.hostname.toLowerCase())) return null;
 
     return url.toString();
 }
 
 export function isEmpty(value) {
     return value === null || value === undefined || String(value).trim() === '';
+}
+
+/**
+ * Reads an attribute off the page's <main> element without Playwright's
+ * default actionability wait - locator.getAttribute() on a locator that
+ * matches zero elements waits up to its timeout (30s by default) hoping one
+ * appears, which is exactly what happens on any real page that doesn't
+ * have a single unambiguous <main> (most real marketplace pages). Checking
+ * .count() first (which never waits) avoids that stall entirely.
+ */
+export async function mainPageAttribute(page, name) {
+    const main = page.locator('main');
+    if ((await main.count()) === 0) return null;
+
+    return main.first().getAttribute(name, { timeout: 2000 }).catch(() => null);
 }

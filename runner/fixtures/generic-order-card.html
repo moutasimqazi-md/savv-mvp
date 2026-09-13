@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Fixture: generic order card (no known markers, for heuristic fallback tests)</title></head>
+<body>
+<!--
+  Deliberately uses none of this project's own .savv-fixture-* markers and
+  none of Amazon's real class names either - a generic, invented layout
+  representing "some marketplace page we have never seen selectors for."
+  Tests the provider-agnostic heuristic fallback in
+  runner/src/parsers/shared/heuristicExtract.js.
+-->
+<div class="random-wrapper-xyz">
+  <div class="card-abc123">
+    <span>Order ID: SYNTH-GEN-0001</span>
+    <span>Delivered on Jul 14, 2025</span>
+    <a href="https://www.flipkart.com/synthetic-generic-item/p/SYNTHGEN0001">Synthetic Generic Backpack</a>
+    <span>Qty: 2</span>
+    <span>₹1,749.00</span>
+  </div>
+</div>
+</body>
+</html>

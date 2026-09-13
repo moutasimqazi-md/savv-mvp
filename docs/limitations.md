@@ -5,23 +5,58 @@ not a claim of complete marketplace coverage. It does not guarantee
 continuous synchronization, guaranteed return eligibility, or protection
 from marketplace account challenges/suspensions.
 
-## Nothing here has been executed
+## Verified working (as of first local run)
 
-This repository was written in an environment with no PHP, Composer,
-Node.js, or MariaDB installed, so nothing could be run, migrated, built, or
-tested during development. Everything above this line is source code the
-author has read and reasoned about, not a running, verified system. Before
-trusting it:
+This was originally written in an environment with no PHP/Composer/Node/
+MariaDB installed, so it shipped unexecuted. It has since been installed and
+exercised end-to-end on a real Windows machine (PHP 8.3.33, MariaDB
+10.11.19, Node 22): all 20 migrations ran clean, the full backend test suite
+(107 tests) and runner test suite (21 tests) pass, `npm run build` produces
+working Vite assets, and a full HTTP walkthrough (register → login →
+dashboard → connections → start an import session → runner launches a real
+headed Chromium window that successfully navigates to Amazon's real sign-in
+page → stop → temporary profile deleted) completed successfully.
 
-```bash
-cd backend && composer install && php artisan test
-cd ../runner && npm install && npm test
-```
+That pass surfaced and fixed several real bugs, worth knowing about if
+you're running an older clone of this repo or hit similar symptoms:
 
-...and fix whatever those turn up - dependency version drift (this was
-written against Laravel 12 / Playwright 1.48-era APIs, which may have moved
-on by the time you install them), typos, and any Laravel/Playwright API
-details that differ from what's assumed here.
+- `backend/public/index.php` and `.htaccess` didn't exist (never scaffolded
+  by hand originally) - without them every request 500s with "Failed
+  opening required .../public/index.php".
+- The runner's HMAC signature check used Express's `req.path`, which is
+  *relative to the router's mount point* (e.g. `/` or `/:id/scan` under the
+  `/internal/sessions` mount), not the full path Laravel signs - every
+  request failed with `invalid_signature` until it was switched to
+  `req.originalUrl`. If you see that error, check both sides are hashing
+  the same literal path string.
+- `resources/js/rbi-viewer.js` imported `@novnc/novnc/core/rfb.js`, but that
+  package's `exports` field only allows importing the bare package name.
+- `vite.config.js` needed `build.target: 'es2022'` - `@novnc/novnc` uses
+  top-level `await` internally, which fails under Vite's default target.
+- A fresh Playwright Chromium install's very first launch can take longer
+  than `RUNNER_REQUEST_TIMEOUT_SECONDS`'s old default of 10s (e.g. Windows
+  Defender scanning the newly-extracted binary) - later launches are fast.
+  Default is now 30s; bump it further if "Could not start the temporary
+  browser" appears right after first install but not afterward.
+- `config/hashing.php` locks the app to Argon2id, which is enforced when
+  *setting* the `password` attribute (not just when reading it) - a test or
+  script that does `$user->password = bcrypt(...)` will throw immediately,
+  by design. Use `Hash::make()` everywhere instead of the `bcrypt()`
+  helper, which is hardcoded to bcrypt regardless of app config.
+- Windows-specific: a folder's stray "Read-only" attribute (common on
+  OneDrive-synced paths) can make PHP's `is_writable()` wrongly report a
+  perfectly writable directory as not writable - clear it with
+  `attrib -R <path> /S /D` if you see "directory must be present and
+  writable" errors on Windows.
+
+None of the above are environment-specific workarounds papered over in this
+doc - they were fixed in the actual source (`public/index.php`,
+`verifySignature.js`, `rbi-viewer.js`, `vite.config.js`,
+`config/savv.php`, the test files) and are already reflected in this repo.
+
+Still not exercised: the Ubuntu/Xvfb/x11vnc/shared-websockify streaming path
+(`RUNNER_STREAM_ENABLED=true`), and a real marketplace scan against
+non-synthetic markup (see "Parsers are synthetic-fixture-only" below).
 
 ## Parsers are synthetic-fixture-only
 

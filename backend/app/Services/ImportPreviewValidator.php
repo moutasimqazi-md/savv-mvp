@@ -194,7 +194,7 @@ final class ImportPreviewValidator
             'quantity' => $quantity,
             'unit_price_minor' => $unitPrice,
             'line_total_minor' => $lineTotal,
-            'product_image_url' => MarketplaceUrlValidator::sanitizeOrNull($raw['product_image_url'] ?? null),
+            'product_image_url' => MarketplaceUrlValidator::sanitizeOrNull($raw['product_image_url'] ?? null, isImage: true),
             'official_product_url' => MarketplaceUrlValidator::sanitizeOrNull($raw['official_product_url'] ?? null),
         ], $warnings];
     }

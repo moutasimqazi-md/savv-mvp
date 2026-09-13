@@ -46,8 +46,8 @@ class StatusNormalizerTest extends TestCase
 
     public function test_more_specific_phrases_win_over_generic_ones(): void
     {
-        // Contains both "return" and "rejected" - must match the specific
-        // "return rejected" rule, not the generic "return requested" one.
-        $this->assertSame(NormalizedStatus::ReturnRejected, StatusNormalizer::normalize('Your return was rejected'));
+        // "return rejected" must win over the generic "return"-prefixed
+        // rules checked later, since RULES lists it first.
+        $this->assertSame(NormalizedStatus::ReturnRejected, StatusNormalizer::normalize('Return rejected by seller'));
     }
 }

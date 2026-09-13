@@ -27,7 +27,7 @@ function sign({ method = 'POST', path = '/internal/sessions', timestamp, nonce, 
 function fakeReqRes({ headers, rawBody, method, path }) {
     const req = {
         method,
-        path,
+        originalUrl: path,
         rawBody,
         header: (name) => headers[name],
     };

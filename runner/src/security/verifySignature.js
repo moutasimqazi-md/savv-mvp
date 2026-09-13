@@ -34,6 +34,12 @@ export function verifySignatureMiddleware(sharedSecret, maxSkewSeconds) {
             return res.status(401).json({ error: 'missing_signature_headers' });
         }
 
+        // req.path is relative to wherever this middleware is mounted
+        // (e.g. "/" or "/:id/scan" under the "/internal/sessions" mount) -
+        // Laravel signs the full path, so we must use the same here.
+        // req.originalUrl still includes the query string; strip it.
+        const fullPath = req.originalUrl.split('?')[0];
+
         const nowSeconds = Math.floor(Date.now() / 1000);
         const tsNumber = Number(timestamp);
 
@@ -56,7 +62,7 @@ export function verifySignatureMiddleware(sharedSecret, maxSkewSeconds) {
 
         const expectedSignature = crypto
             .createHmac('sha256', sharedSecret)
-            .update(stringToSign(req.method, req.path, timestamp, nonce, bodyHash))
+            .update(stringToSign(req.method, fullPath, timestamp, nonce, bodyHash))
             .digest('hex');
 
         if (!timingSafeEqualStrings(expectedSignature, signature)) {

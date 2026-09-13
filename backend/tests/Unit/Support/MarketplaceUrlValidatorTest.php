@@ -48,4 +48,25 @@ class MarketplaceUrlValidatorTest extends TestCase
             MarketplaceUrlValidator::sanitizeOrNull('https://www.amazon.in/dp/SYNTH1'),
         );
     }
+
+    public function test_image_cdn_hosts_are_rejected_as_a_link_but_allowed_as_an_image(): void
+    {
+        $url = 'https://m.media-amazon.com/images/I/example.jpg';
+
+        $this->assertFalse(MarketplaceUrlValidator::isAllowed($url));
+        $this->assertTrue(MarketplaceUrlValidator::isAllowed($url, isImage: true));
+    }
+
+    public function test_flipkart_image_cdn_host_is_allowed_only_as_an_image(): void
+    {
+        $url = 'https://rukminim2.flixcart.com/image/example.jpg';
+
+        $this->assertFalse(MarketplaceUrlValidator::isAllowed($url));
+        $this->assertTrue(MarketplaceUrlValidator::isAllowed($url, isImage: true));
+    }
+
+    public function test_unapproved_host_is_still_rejected_even_as_an_image(): void
+    {
+        $this->assertFalse(MarketplaceUrlValidator::isAllowed('https://evil.example.com/tracker.jpg', isImage: true));
+    }
 }

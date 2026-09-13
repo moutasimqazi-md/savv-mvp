@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Fixture: many real-structure order cards (invented data)</title></head>
+<body>
+<!--
+  Same real order-card structure as real-structure-delivered.html, repeated
+  many times. Regression fixture for the extractRealOrders() performance fix
+  (single page.evaluate() scan instead of a Playwright locator round-trip
+  per header row per order) - a real "Your Orders" page can list many
+  orders, and the old per-row-locator approach could take long enough to
+  exceed the scan timeout. All data below is invented.
+-->
+<script>
+  document.write(Array.from({ length: 25 }, (_, i) => {
+    const n = String(i + 1).padStart(3, '0');
+    return `
+      <div class="order-card js-order-card">
+        <div class="a-box a-color-offset-background order-header">
+          <ul>
+            <li class="order-header__header-list-item" role="presentation">
+              <div class="a-row a-size-mini"><span class="a-color-secondary a-text-caps">Order placed</span></div>
+              <div class="a-row"><span class="a-size-base a-color-secondary aok-break-word">1 January 2026</span></div>
+            </li>
+            <li class="order-header__header-list-item" role="presentation">
+              <div class="a-row a-size-mini"><span class="a-color-secondary a-text-caps">Total</span></div>
+              <div class="a-row"><span class="a-size-base a-color-secondary aok-break-word">₹${n}.00</span></div>
+            </li>
+            <li class="order-header__header-list-item" role="presentation">
+              <div class="yohtmlc-recipient">
+                <div class="a-row a-size-mini"><span class="a-color-secondary a-text-caps">Ship to</span></div>
+                <div class="a-row a-size-base"><a class="a-link-normal" href="#">Synthetic Recipient ${n}, Invented Street</a></div>
+              </div>
+            </li>
+            <li class="order-header__header-list-item" role="presentation">
+              <div class="yohtmlc-order-id">
+                <span class="a-color-secondary a-text-caps">Order #</span>
+                <span class="a-color-secondary" dir="ltr">SYNTH-MANY-${n}</span>
+              </div>
+            </li>
+            <li class="order-header__header-list-item yohtmlc-order-level-connections" role="presentation">
+              <a class="a-link-normal" href="https://www.amazon.in/your-orders/order-details?orderID=SYNTH-MANY-${n}">View order details</a>
+            </li>
+          </ul>
+        </div>
+        <div class="a-box delivery-box"><div class="a-box-inner">
+          <div class="yohtmlc-shipment-status-primaryText"><h3>Delivered 5 January 2026</h3></div>
+        </div></div>
+        <div class="a-fixed-left-grid item-box a-spacing-none"><div class="a-fixed-left-grid-inner">
+          <div class="product-image"><a class="a-link-normal" href="https://www.amazon.in/dp/SYNTHMANY${n}"><img alt="x" src="x.jpg"></a></div>
+          <div class="a-fixed-left-grid-col a-col-right">
+            <div class="a-row"><div class="yohtmlc-product-title"><a class="a-link-normal" href="https://www.amazon.in/dp/SYNTHMANY${n}">Synthetic Item ${n}</a></div></div>
+          </div>
+        </div></div>
+      </div>
+    `;
+  }).join(''));
+</script>
+</body>
+</html>

@@ -11,8 +11,22 @@ function initImportSessionPage() {
     const statusUrl = root.dataset.statusUrl;
     const previewUrl = root.dataset.previewUrl;
     const statusEl = document.querySelector('[data-session-status]');
+    const errorEl = document.querySelector('[data-session-error]');
     const previewList = document.querySelector('[data-preview-list]');
+    const previewEmpty = document.querySelector('[data-preview-empty]');
     const confirmForm = document.querySelector('[data-confirm-form]');
+
+    // Keep in sync with the safe_error_code values set in
+    // app/Jobs/ScanImportSession.php, app/Services/ImportSessionService.php,
+    // and app/Jobs/ConfirmImportSession.php.
+    const ERROR_MESSAGES = {
+        unsupported_layout: "Savv Companion could not safely read this page version. No account credentials or page contents were uploaded.",
+        unsupported_host: 'This page is not on the official marketplace site, so scanning was stopped.',
+        runner_unreachable: 'Could not start the temporary browser. Please try again shortly.',
+        scan_failed: 'The scan could not be completed. Please try again.',
+        import_failed: 'The import could not be completed. Please try again.',
+        runner_process_lost: 'The temporary browser was lost unexpectedly. Please start a new import.',
+    };
 
     let polling = true;
 
@@ -24,6 +38,15 @@ function initImportSessionPage() {
             const data = await res.json();
 
             if (statusEl) statusEl.textContent = data.status;
+
+            if (errorEl) {
+                if (data.safe_error_code) {
+                    errorEl.textContent = ERROR_MESSAGES[data.safe_error_code] ?? 'Something went wrong with this import.';
+                    errorEl.hidden = false;
+                } else {
+                    errorEl.hidden = true;
+                }
+            }
 
             if (['preview_ready', 'importing', 'completed', 'cancelled', 'expired', 'failed', 'terminated'].includes(data.status)) {
                 if (data.status === 'preview_ready') {
@@ -75,6 +98,7 @@ function initImportSessionPage() {
         });
 
         if (confirmForm) confirmForm.hidden = data.previews.length === 0;
+        if (previewEmpty) previewEmpty.hidden = data.previews.length > 0;
     }
 
     function escapeHtml(str) {

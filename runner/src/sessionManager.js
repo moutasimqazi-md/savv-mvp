@@ -131,11 +131,16 @@ export async function scanSession(sessionId) {
             if (valid) orders.push(parser.redact(order));
         }
 
-        const nextPageHref = await record.page
-            .locator('[data-savv-next-page]')
-            .first()
-            .getAttribute('href')
-            .catch(() => null);
+        // .count() first: locator.getAttribute() on a locator matching zero
+        // elements waits up to its default 30s timeout hoping one appears -
+        // which is exactly what happens here on every real page, since
+        // [data-savv-next-page] is our own synthetic attribute that a real
+        // marketplace page never has. That 30s stall was silently eating
+        // the entire scan timeout budget on every scan.
+        const nextPageLink = record.page.locator('[data-savv-next-page]').first();
+        const nextPageHref = (await nextPageLink.count()) > 0
+            ? await nextPageLink.getAttribute('href', { timeout: 2000 }).catch(() => null)
+            : null;
 
         if (!nextPageHref || !isNavigationAllowed(nextPageHref, record.provider)) break;
 

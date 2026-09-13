@@ -6,10 +6,15 @@
         <h1 class="mb-2 text-xl font-semibold">
             Importing from {{ $importSession->provider->label() }}
         </h1>
-        <p class="mb-6 text-sm text-gray-500">
+        <p class="mb-3 text-sm text-gray-500">
             Status: <span data-session-status class="font-medium">{{ $importSession->status->value }}</span>
             - expires {{ $importSession->expires_at->diffForHumans() }}
         </p>
+
+        <div data-session-error @if (! $importSession->safe_error_code) hidden @endif
+             class="mb-6 rounded border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-800">
+            {{ $importSession->safe_error_code }}
+        </div>
 
         <div class="mb-6 overflow-hidden rounded border border-gray-200 bg-white">
             <iframe src="{{ route('imports.browser', $importSession) }}" class="h-[480px] w-full" title="Temporary browser"></iframe>

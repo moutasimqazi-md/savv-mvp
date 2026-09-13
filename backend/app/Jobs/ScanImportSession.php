@@ -7,6 +7,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Log;
 use Savv\Enums\ImportSessionStatus;
 use Savv\Enums\Provider;
 use Savv\Models\ImportSession;
@@ -36,8 +37,33 @@ class ScanImportSession implements ShouldQueue
 
         try {
             $result = $runner->scan($session->public_id);
+
+            // The runner reports a structural problem (unsupported page
+            // layout, disallowed host) as a 200 response with an `error`
+            // key, not an HTTP error - it already safely produced zero
+            // orders rather than guessing. Surface it as a real failure
+            // with its specific safe error code, instead of silently
+            // showing the user an empty "no orders found" preview.
+            if (isset($result['error'])) {
+                $session->forceFill([
+                    'status' => ImportSessionStatus::Failed,
+                    'safe_error_code' => $result['error'],
+                ])->save();
+
+                AuditLogger::record('import_session.scan_unsupported', $session->user_id, ImportSession::class, $session->id, [
+                    'reason' => $result['error'],
+                ]);
+
+                return;
+            }
+
             $validated = ImportPreviewValidator::validateScanResult($result['orders'] ?? [], Provider::from($session->provider->value));
-        } catch (\Throwable) {
+        } catch (\Throwable $e) {
+            // The technical message is safe to log (no order/personal data
+            // ever passes through this exception) but must never reach the
+            // redacted audit trail or the end user - see safe_error_code.
+            Log::error('Scan failed for import session '.$session->public_id.': '.$e->getMessage());
+
             $session->forceFill([
                 'status' => ImportSessionStatus::Failed,
                 'safe_error_code' => 'scan_failed',

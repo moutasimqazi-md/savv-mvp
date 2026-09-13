@@ -96,14 +96,16 @@ database/user creation SQL an administrator must run.
 
 ## Status
 
-This repository was scaffolded by hand (no `composer create-project` /
-`npm create` was run, because this environment has no PHP/Composer/Node/
-MariaDB installed). Before first run you must install the toolchain
-described in [docs/deployment-windows.md](docs/deployment-windows.md) or
-[docs/deployment-ubuntu.md](docs/deployment-ubuntu.md), then run
-`composer install` / `npm install` in both `backend/` and `runner/` to
-generate `vendor/`/`node_modules/`. Nothing here has been executed or
-test-run yet — see [docs/limitations.md](docs/limitations.md).
+This repository was originally scaffolded by hand (no `composer
+create-project` / `npm create`) in an environment with no PHP/Composer/
+Node/MariaDB installed. It has since been installed and verified end-to-end
+on a real machine: 107/107 backend tests pass, 21/21 runner tests pass, and
+a full register → login → connect → start import session → real headed
+Chromium reaches Amazon's sign-in page → stop → cleanup walkthrough
+completed successfully. See
+[docs/limitations.md](docs/limitations.md#verified-working-as-of-first-local-run)
+for exactly what was tested and the real bugs that surfaced and were fixed
+along the way.
 
 The Amazon India and Flipkart parsers only recognize the synthetic fixtures
 in `runner/fixtures/` today (invented data, invented markup) - see

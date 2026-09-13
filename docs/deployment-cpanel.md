@@ -48,10 +48,12 @@ WHM/cPanel installed on top, where you *do* have root via SSH. In that case:
      build`, `php artisan migrate`, etc.
    - **Cron Jobs** page for the scheduler (step below) instead of editing
      crontab by hand.
-   - Nginx/Apache config for the `/rbi/` websocket proxy still needs to be
-     hand-edited (via WHM's "Include Editor" for Apache, or directly for
-     Nginx if your stack uses it) - see `docs/samples/nginx-savv.conf` and
-     adapt for Apache + `mod_proxy_wstunnel` if that's your setup.
+   - The `/rbi/` websocket proxy (to the shared websockify broker) needs a
+     hand-added Apache config block, since stock cPanel/WHM uses Apache
+     (EasyApache 4), not Nginx - see
+     `docs/samples/apache-savv-rbi.conf` and add it via WHM's
+     **Apache Configuration → Include Editor**. If you've replaced Apache
+     with Nginx on this box, use `docs/samples/nginx-savv.conf` instead.
 
 ### Option B: ordinary shared cPanel hosting (no root)
 
