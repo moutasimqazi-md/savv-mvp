@@ -34,7 +34,7 @@ test('heuristic fallback extracts an order from a page with no known markers', a
         assert.equal(order.items.length, 1);
         assert.equal(order.items[0].title, 'Synthetic Generic Backpack');
         assert.equal(order.items[0].quantity, 2);
-        assert.equal(order.items[0].official_product_url, 'https://www.flipkart.com/synthetic-generic-item/p/SYNTHGEN0001');
+        assert.equal(order.items[0].official_product_url, 'https://www.amazon.in/synthetic-generic-item/p/SYNTHGEN0001');
     } finally {
         await browser.close();
     }

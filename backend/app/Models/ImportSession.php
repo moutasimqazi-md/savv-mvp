@@ -47,6 +47,11 @@ class ImportSession extends Model
         return $this->hasMany(ImportPreview::class);
     }
 
+    public function subscriptionPreviews(): HasMany
+    {
+        return $this->hasMany(SubscriptionPreview::class);
+    }
+
     public function importBatches(): HasMany
     {
         return $this->hasMany(ImportBatch::class);

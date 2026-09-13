@@ -14,11 +14,12 @@ const ALLOWED_HOSTS_BY_PROVIDER = {
         // Amazon's normal sign-in flow can redirect through this host.
         'www.amazon.com',
     ],
-    flipkart: [
-        'www.flipkart.com',
-        'flipkart.com',
-        // Flipkart's normal sign-in flow can redirect through this host.
-        'accounts.flipkart.com',
+    claude: [
+        'claude.ai',
+    ],
+    walmart: [
+        'www.walmart.com',
+        'walmart.com',
     ],
 };
 

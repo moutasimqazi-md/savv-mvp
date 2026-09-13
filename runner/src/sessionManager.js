@@ -4,7 +4,7 @@ import { chromium } from 'playwright';
 import { allocateDisplay, releaseDisplay } from './display/displayAllocator.js';
 import { startStreamingStack, writeVncToken, removeVncToken } from './display/streamingStack.js';
 import { isNavigationAllowed, allowedHostsFor } from './security/navigationGuard.js';
-import { parserFor } from './parsers/registry.js';
+import { parserFor, kindFor } from './parsers/registry.js';
 
 const HEADED = process.env.RUNNER_HEADED !== 'false';
 const PROFILE_ROOT = process.env.RUNNER_PROFILE_ROOT ?? './tmp/profiles';
@@ -14,7 +14,8 @@ const PAGE_NAV_DELAY_MS = Number(process.env.RUNNER_PAGE_NAVIGATION_DELAY_MS ?? 
 
 const HOME_URL_BY_PROVIDER = {
     amazon_in: 'https://www.amazon.in/gp/css/order-history',
-    flipkart: 'https://www.flipkart.com/account/orders',
+    claude: 'https://claude.ai/settings/billing',
+    walmart: 'https://www.walmart.com/orders',
 };
 
 /** @type {Map<string, object>} sessionId -> session record */
@@ -109,6 +110,7 @@ export async function scanSession(sessionId) {
     }
 
     const parser = parserFor(record.provider);
+    const kind = kindFor(record.provider);
 
     if (!(await parser.supportsCurrentPage(record.page))) {
         record.status = 'failed';
@@ -117,6 +119,20 @@ export async function scanSession(sessionId) {
             message: 'Savv Companion could not safely read this page version. No account credentials or page contents were uploaded.',
             orders: [],
         };
+    }
+
+    if (kind === 'subscription') {
+        const subscriptions = [];
+        const rawSubscriptions = await parser.extractSubscriptions(record.page);
+
+        for (const subscription of rawSubscriptions) {
+            const { valid } = parser.validate(subscription);
+            if (valid) subscriptions.push(parser.redact(subscription));
+        }
+
+        record.status = 'ready';
+
+        return { subscriptions, parserVersion: parser.getVersion() };
     }
 
     const orders = [];

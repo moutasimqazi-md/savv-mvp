@@ -11,6 +11,7 @@ use Savv\Http\Controllers\OrderController;
 use Savv\Http\Controllers\PrivacyController;
 use Savv\Http\Controllers\RefundsController;
 use Savv\Http\Controllers\ReturnsController;
+use Savv\Http\Controllers\SubscriptionsController;
 
 Route::view('/', 'welcome')->name('home');
 
@@ -33,7 +34,7 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/connections', [ConnectionsController::class, 'index'])->name('connections.index');
     Route::post('/connections/{provider}/start', [ConnectionsController::class, 'start'])
-        ->whereIn('provider', ['amazon_in', 'flipkart'])
+        ->whereIn('provider', ['amazon_in', 'claude', 'walmart'])
         ->middleware('throttle:import-session-start')
         ->name('connections.start');
 
@@ -58,6 +59,7 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/returns', [ReturnsController::class, 'index'])->name('returns.index');
     Route::get('/refunds', [RefundsController::class, 'index'])->name('refunds.index');
+    Route::get('/subscriptions', [SubscriptionsController::class, 'index'])->name('subscriptions.index');
 
     Route::get('/settings/privacy', [PrivacyController::class, 'index'])->name('privacy.index');
     Route::get('/account/export', [AccountController::class, 'export'])->name('account.export');

@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Fixture: generic subscription panel (no known markers, for heuristic fallback tests)</title></head>
+<body>
+<!--
+  Deliberately uses none of this project's own .savv-fixture-* markers -
+  a generic, invented billing-page layout representing "some subscription
+  site we have never seen selectors for." Tests the provider-agnostic
+  heuristic fallback in runner/src/parsers/shared/subscriptionHeuristic.js.
+  Fields are each in their own block-level <div>, like a real billing page
+  row layout, so innerText() reports them on separate lines.
+-->
+<div class="random-billing-wrapper">
+  <div class="plan-card-xyz">
+    <div>Synthetic Pro Plan</div>
+    <div>$15.00 per month</div>
+    <div>Active</div>
+    <div>Renews 20 October 2026</div>
+  </div>
+</div>
+</body>
+</html>

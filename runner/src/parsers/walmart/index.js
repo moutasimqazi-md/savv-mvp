@@ -1,36 +1,37 @@
 /**
- * Flipkart parser.
+ * Walmart (walmart.com) parser.
  *
- * Has two extraction paths:
+ * Has two extraction paths, tried in order:
  *
- * 1. Fixture-based (`.savv-fixture-fk-*` markers) - built and tested only
- *    against the synthetic fixtures in /runner/fixtures/flipkart/*.html. It
- *    does NOT use real flipkart.com DOM selectors, because none have been
+ * 1. Fixture-based (`.savv-fixture-wm-*` markers) - built and tested only
+ *    against the synthetic fixtures in /runner/fixtures/walmart/*.html. It
+ *    does NOT use real walmart.com DOM selectors, because none have been
  *    supplied yet - see docs/parser-maintenance.md before extending this
- *    path with real selectors.
+ *    path with real selectors (the same sanitized-fixture process used for
+ *    Amazon's real-selector pass applies here).
  * 2. Heuristic fallback (shared/heuristicExtract.js) - runs only when the
- *    fixture path finds nothing. Provider-agnostic pattern matching against
- *    whatever real page is open, deliberately narrow (only atomic fields
- *    like price/date/status/order-id/product-link, never a whole "order
- *    card" block of text) to avoid ever capturing an address or phone
- *    number that might sit in the same container. Lower precision than a
- *    fixture-verified parser - see docs/limitations.md.
+ *    fixture path finds nothing. Provider-agnostic pattern matching,
+ *    deliberately narrow (only atomic fields like price/date/status/
+ *    order-id/product-link, never a whole "order card" block of text) to
+ *    avoid ever capturing an address or phone number that might sit in the
+ *    same container. Lower precision than a fixture-verified parser - see
+ *    docs/limitations.md.
  */
 import { cleanText, sanitizeUrlOrNull, isEmpty, mainPageAttribute } from '../shared/sanitize.js';
 import { findHeuristicCandidates, groupCandidatesIntoOrders, buildHeuristicOrders } from '../shared/heuristicExtract.js';
 
-const PARSER_VERSION = 'flipkart@0.2.0-heuristic-fallback';
+const PARSER_VERSION = 'walmart@0.1.0-synthetic';
 const MAX_ORDERS = 100;
 const MAX_ITEMS_PER_ORDER = 100;
 
-export const flipkartParser = {
+export const walmartParser = {
     getVersion() {
         return PARSER_VERSION;
     },
 
     async supportsCurrentPage(page) {
-        if ((await mainPageAttribute(page, 'data-savv-page')) === 'flipkart-orders') return true;
-        if ((await page.locator('.savv-fixture-fk-order').count()) > 0) return true;
+        if ((await mainPageAttribute(page, 'data-savv-page')) === 'walmart-orders') return true;
+        if ((await page.locator('.savv-fixture-wm-order').count()) > 0) return true;
 
         const candidates = await findHeuristicCandidates(page);
         return groupCandidatesIntoOrders(candidates).length > 0;
@@ -41,7 +42,7 @@ export const flipkartParser = {
     },
 
     async extractOrders(page) {
-        const orderHandles = await page.locator('.savv-fixture-fk-order').all();
+        const orderHandles = await page.locator('.savv-fixture-wm-order').all();
         const orders = [];
 
         for (const handle of orderHandles.slice(0, MAX_ORDERS)) {
@@ -50,11 +51,11 @@ export const flipkartParser = {
 
             orders.push({
                 provider_order_id: cleanText(providerOrderId, 100),
-                order_date: parseFixtureDate(await textOrNull(handle, '.savv-fixture-fk-order-date')),
-                original_status: cleanText(await textOrNull(handle, '.savv-fixture-fk-status')),
-                currency: 'INR',
-                total: parseFixtureAmount(await textOrNull(handle, '.savv-fixture-fk-order-total')),
-                official_order_url: sanitizeUrlOrNull(await hrefOrNull(handle, '.savv-fixture-fk-order-link')),
+                order_date: parseFixtureDate(await textOrNull(handle, '.savv-fixture-wm-order-date')),
+                original_status: cleanText(await textOrNull(handle, '.savv-fixture-wm-status')),
+                currency: 'USD',
+                total: parseFixtureAmount(await textOrNull(handle, '.savv-fixture-wm-order-total')),
+                official_order_url: sanitizeUrlOrNull(await hrefOrNull(handle, '.savv-fixture-wm-order-link')),
                 observed_at: new Date().toISOString(),
                 items: await this.extractOrderItems(page, handle),
                 shipments: await this.extractShipments(page, handle),
@@ -73,20 +74,20 @@ export const flipkartParser = {
     },
 
     async extractOrderItems(page, orderEl) {
-        const itemHandles = await orderEl.locator('.savv-fixture-fk-item').all();
+        const itemHandles = await orderEl.locator('.savv-fixture-wm-item').all();
         const items = [];
 
         for (const item of itemHandles.slice(0, MAX_ITEMS_PER_ORDER)) {
-            const title = await textOrNull(item, '.savv-fixture-fk-item-link');
+            const title = await textOrNull(item, '.savv-fixture-wm-item-link');
             if (isEmpty(title)) continue;
 
             items.push({
                 title: cleanText(title),
-                quantity: parseFixtureQuantity(await textOrNull(item, '.savv-fixture-fk-item-qty')),
-                unit_price: parseFixtureAmount(await textOrNull(item, '.savv-fixture-fk-item-price')),
-                line_total: parseFixtureAmount(await textOrNull(item, '.savv-fixture-fk-item-price')),
-                product_image_url: sanitizeUrlOrNull(await hrefOrAttrOrNull(item, '.savv-fixture-fk-item-image', 'src'), { isImage: true }),
-                official_product_url: sanitizeUrlOrNull(await hrefOrNull(item, '.savv-fixture-fk-item-link')),
+                quantity: parseFixtureQuantity(await textOrNull(item, '.savv-fixture-wm-item-qty')),
+                unit_price: parseFixtureAmount(await textOrNull(item, '.savv-fixture-wm-item-price')),
+                line_total: parseFixtureAmount(await textOrNull(item, '.savv-fixture-wm-item-price')),
+                product_image_url: sanitizeUrlOrNull(await hrefOrAttrOrNull(item, '.savv-fixture-wm-item-image', 'src'), { isImage: true }),
+                official_product_url: sanitizeUrlOrNull(await hrefOrNull(item, '.savv-fixture-wm-item-link')),
             });
         }
 
@@ -94,9 +95,9 @@ export const flipkartParser = {
     },
 
     async extractShipments(page, orderEl) {
-        const carrier = await textOrNull(orderEl, '.savv-fixture-fk-shipment-carrier');
-        const tracking = await textOrNull(orderEl, '.savv-fixture-fk-shipment-tracking');
-        const status = await textOrNull(orderEl, '.savv-fixture-fk-status');
+        const carrier = await textOrNull(orderEl, '.savv-fixture-wm-shipment-carrier');
+        const tracking = await textOrNull(orderEl, '.savv-fixture-wm-shipment-tracking');
+        const status = await textOrNull(orderEl, '.savv-fixture-wm-status');
 
         if (isEmpty(carrier) && isEmpty(tracking) && isEmpty(status)) return [];
 
@@ -108,14 +109,14 @@ export const flipkartParser = {
     },
 
     async extractReturns(page, orderEl) {
-        const returnHandles = await orderEl.locator('.savv-fixture-fk-return').all();
+        const returnHandles = await orderEl.locator('.savv-fixture-wm-return').all();
         const returns = [];
 
         for (const ret of returnHandles) {
             returns.push({
                 provider_return_id: cleanText(await ret.getAttribute('data-savv-return-id'), 100),
-                original_status: cleanText(await textOrNull(ret, '.savv-fixture-fk-return-status')),
-                requested_at: parseFixtureDate(await textOrNull(ret, '.savv-fixture-fk-return-requested')),
+                original_status: cleanText(await textOrNull(ret, '.savv-fixture-wm-return-status')),
+                requested_at: parseFixtureDate(await textOrNull(ret, '.savv-fixture-wm-return-requested')),
             });
         }
 
@@ -123,18 +124,18 @@ export const flipkartParser = {
     },
 
     async extractRefunds(page, orderEl) {
-        const refundHandles = await orderEl.locator('.savv-fixture-fk-refund').all();
+        const refundHandles = await orderEl.locator('.savv-fixture-wm-refund').all();
         const refunds = [];
 
         for (const refund of refundHandles) {
-            const amountText = await textOrNull(refund, '.savv-fixture-fk-refund-amount');
+            const amountText = await textOrNull(refund, '.savv-fixture-wm-refund-amount');
             if (isEmpty(amountText)) continue;
 
             refunds.push({
                 amount: parseFixtureAmount(amountText),
-                currency: 'INR',
-                original_status: cleanText(await textOrNull(refund, '.savv-fixture-fk-refund-status')),
-                initiated_at: parseFixtureDate(await textOrNull(refund, '.savv-fixture-fk-refund-date')),
+                currency: 'USD',
+                original_status: cleanText(await textOrNull(refund, '.savv-fixture-wm-refund-status')),
+                initiated_at: parseFixtureDate(await textOrNull(refund, '.savv-fixture-wm-refund-date')),
             });
         }
 

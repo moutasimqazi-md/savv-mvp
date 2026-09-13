@@ -5,11 +5,42 @@ namespace Savv\Http\Controllers;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
+use Savv\Enums\NormalizedStatus;
 use Savv\Models\Order;
 use Savv\Services\AuditLogger;
 
 class OrderController extends Controller
 {
+    /**
+     * Coarse status groupings behind the order list's segmented tabs. Keeps
+     * the 18-case NormalizedStatus enum from leaking into the UI.
+     */
+    private const BUCKETS = [
+        'in_transit' => [
+            NormalizedStatus::Packed, NormalizedStatus::Shipped, NormalizedStatus::OutForDelivery,
+        ],
+        'delivered' => [
+            NormalizedStatus::Delivered,
+        ],
+        'returns' => [
+            NormalizedStatus::ReturnRequested, NormalizedStatus::ReturnApproved,
+            NormalizedStatus::ReturnPickupScheduled, NormalizedStatus::ReturnPickedUp,
+            NormalizedStatus::ReturnReceived, NormalizedStatus::ReturnCompleted,
+            NormalizedStatus::ReturnRejected,
+        ],
+        'refunds' => [
+            NormalizedStatus::RefundProcessing, NormalizedStatus::Refunded,
+        ],
+        'cancelled' => [
+            NormalizedStatus::Cancelled,
+        ],
+    ];
+
+    private static function bucketValues(string $bucket): array
+    {
+        return array_map(fn (NormalizedStatus $s) => $s->value, self::BUCKETS[$bucket] ?? []);
+    }
+
     public function index(Request $request): View
     {
         $query = Order::query()->where('user_id', $request->user()->id)->with('items');
@@ -20,6 +51,12 @@ class OrderController extends Controller
 
         if ($status = $request->string('status')->toString()) {
             $query->where('normalized_status', $status);
+        }
+
+        $bucket = $request->string('bucket')->toString();
+
+        if ($bucket && isset(self::BUCKETS[$bucket])) {
+            $query->whereIn('normalized_status', self::bucketValues($bucket));
         }
 
         if ($from = $request->date('from')) {
@@ -58,7 +95,24 @@ class OrderController extends Controller
 
         $orders = $query->paginate(20)->withQueryString();
 
-        return view('orders.index', ['orders' => $orders]);
+        $countsByStatus = Order::query()
+            ->where('user_id', $request->user()->id)
+            ->selectRaw('normalized_status, COUNT(*) as aggregate')
+            ->groupBy('normalized_status')
+            ->pluck('aggregate', 'normalized_status');
+
+        $bucketCounts = ['' => (int) $countsByStatus->sum()];
+
+        foreach (array_keys(self::BUCKETS) as $name) {
+            $bucketCounts[$name] = (int) collect(self::bucketValues($name))
+                ->sum(fn (string $value) => (int) ($countsByStatus[$value] ?? 0));
+        }
+
+        return view('orders.index', [
+            'orders' => $orders,
+            'bucket' => $bucket,
+            'bucketCounts' => $bucketCounts,
+        ]);
     }
 
     public function show(Request $request, Order $order): View

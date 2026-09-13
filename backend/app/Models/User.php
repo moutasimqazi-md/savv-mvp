@@ -51,6 +51,11 @@ class User extends Model implements AuthenticatableContract
         return $this->hasMany(Order::class);
     }
 
+    public function subscriptions(): HasMany
+    {
+        return $this->hasMany(Subscription::class);
+    }
+
     public function retentionDays(): int
     {
         return $this->retention_days ?? config('savv.retention.default_days');

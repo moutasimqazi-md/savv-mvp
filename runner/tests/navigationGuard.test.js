@@ -2,13 +2,16 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { isNavigationAllowed } from '../src/security/navigationGuard.js';
 
-test('allows the marketplace order-history host', () => {
+test('allows the marketplace/site host for its own provider', () => {
     assert.equal(isNavigationAllowed('https://www.amazon.in/gp/css/order-history', 'amazon_in'), true);
-    assert.equal(isNavigationAllowed('https://www.flipkart.com/account/orders', 'flipkart'), true);
+    assert.equal(isNavigationAllowed('https://claude.ai/settings/billing', 'claude'), true);
+    assert.equal(isNavigationAllowed('https://www.walmart.com/orders', 'walmart'), true);
 });
 
 test('blocks the wrong provider host', () => {
-    assert.equal(isNavigationAllowed('https://www.flipkart.com/account/orders', 'amazon_in'), false);
+    assert.equal(isNavigationAllowed('https://claude.ai/settings/billing', 'amazon_in'), false);
+    assert.equal(isNavigationAllowed('https://www.amazon.in/gp/css/order-history', 'claude'), false);
+    assert.equal(isNavigationAllowed('https://www.walmart.com/orders', 'amazon_in'), false);
 });
 
 test('blocks localhost and private/link-local ranges (SSRF)', () => {

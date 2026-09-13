@@ -86,16 +86,29 @@ final class ImportSessionService
         // Laravel's richer 14-state business state machine - several
         // strings are spelled the same as ImportSessionStatus cases but
         // mean something narrower (e.g. the runner's internal 'ready'
-        // just means "browser idle", including right after a scan
-        // completes - it is not the same as our formal Ready state).
-        // Laravel's own jobs (ScanImportSession, ConfirmImportSession,
-        // TerminateImportSession) are the sole authority for advancing
-        // status during active processing. The only thing worth reacting
-        // to here is the runner reporting the process is simply gone.
-        if (($result['status'] ?? null) === 'not_found' && ! $session->status->isTerminal()) {
+        // stays 'ready' right after a scan completes too - it does not
+        // mean our formal Ready state specifically). Laravel's own jobs
+        // (ScanImportSession, ConfirmImportSession, TerminateImportSession)
+        // are the sole authority for advancing status once scanning starts.
+        // Only two narrow, unambiguous syncs happen here:
+        $reportedStatus = $result['status'] ?? null;
+
+        if ($reportedStatus === 'not_found' && ! $session->status->isTerminal()) {
+            // The process is simply gone (e.g. it hit its own lifetime cap).
             $session->forceFill([
                 'status' => ImportSessionStatus::Failed,
                 'safe_error_code' => 'runner_process_lost',
+            ])->save();
+        } elseif ($reportedStatus === 'ready' && $session->status === ImportSessionStatus::Starting) {
+            // The browser finished launching and navigating - purely
+            // cosmetic (the "starting" status already permits scanning),
+            // but the UI should reflect that it's ready to log into.
+            $session->forceFill(['status' => ImportSessionStatus::Ready])->save();
+        } elseif ($reportedStatus === 'failed' && $session->status === ImportSessionStatus::Starting) {
+            // createSession()'s own navigation attempt failed outright.
+            $session->forceFill([
+                'status' => ImportSessionStatus::Failed,
+                'safe_error_code' => 'runner_unreachable',
             ])->save();
         }
 
@@ -120,6 +133,7 @@ final class ImportSessionService
     {
         return DB::transaction(function () use ($session) {
             $session->previews()->delete();
+            $session->subscriptionPreviews()->delete();
             $session->forceFill(['status' => ImportSessionStatus::Terminating])->save();
 
             TerminateImportSession::dispatch($session->id, 'cancelled');
@@ -134,6 +148,7 @@ final class ImportSessionService
     {
         return DB::transaction(function () use ($session) {
             $session->previews()->delete();
+            $session->subscriptionPreviews()->delete();
             $session->forceFill(['status' => ImportSessionStatus::Terminating])->save();
 
             TerminateImportSession::dispatch($session->id, 'expired');

@@ -7,18 +7,50 @@
         @vite(['resources/js/rbi-viewer.js'])
     @endif
     <style>
-        body { margin: 0; font-family: system-ui, sans-serif; background: #111827; color: #e5e7eb; }
-        .msg { padding: 2rem; text-align: center; }
+        :root { color-scheme: dark; }
+        body {
+            margin: 0;
+            font-family: Heebo, ui-sans-serif, system-ui, sans-serif;
+            background: #1b1b1b;
+            color: #eeeeee;
+        }
+        .msg {
+            display: flex;
+            min-height: 100vh;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 14px;
+            padding: 2.5rem;
+            text-align: center;
+        }
+        .msg p { margin: 0; max-width: 34rem; font-size: 14px; line-height: 1.65; color: #c9c9c9; }
+        .dot {
+            display: inline-block;
+            height: 8px; width: 8px;
+            border-radius: 999px;
+            background: #FE7B49;
+            margin-right: 6px;
+        }
+        .status {
+            font-size: 12px;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+            font-weight: 700;
+            color: #8D8D8D;
+        }
         [data-rbi-canvas] { width: 100%; height: 100vh; }
     </style>
 </head>
 <body>
     @if (! $streamEnabled)
         <div class="msg">
-            <p>Local development mode: a Chromium window has opened directly on this
-               machine's screen. Switch to it, log in, then come back here and press
-               "I'm logged in - scan my orders".</p>
-            <p>Session status: {{ $importSession->status->value }}</p>
+            <p>
+                <span class="dot"></span>
+                Local development mode - a Chromium window has opened directly on this machine's screen.
+                Switch to it, log in, then come back here and press &ldquo;scan my orders&rdquo;.
+            </p>
+            <p class="status">Session {{ $importSession->status->value }}</p>
         </div>
     @elseif ($viewToken)
         <div data-rbi-viewer
@@ -27,7 +59,8 @@
         </div>
     @else
         <div class="msg">
-            <p>The temporary browser is not ready to view right now (status: {{ $importSession->status->value }}).</p>
+            <p>The temporary browser is not ready to view right now.</p>
+            <p class="status">Session {{ $importSession->status->value }}</p>
         </div>
     @endif
 </body>

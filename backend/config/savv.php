@@ -3,16 +3,18 @@
 return [
     /*
     |--------------------------------------------------------------------
-    | Marketplace boundary
+    | Site boundary
     |--------------------------------------------------------------------
-    | Domains treated as official marketplace links. Anything else is
+    | Domains treated as official site links (marketplace order/product
+    | links, or a subscription site's billing page). Anything else is
     | rejected in import payloads and blocked from runner navigation.
     */
     'allowed_marketplace_hosts' => [
         'amazon.in' => 'amazon_in',
         'www.amazon.in' => 'amazon_in',
-        'flipkart.com' => 'flipkart',
-        'www.flipkart.com' => 'flipkart',
+        'claude.ai' => 'claude',
+        'walmart.com' => 'walmart',
+        'www.walmart.com' => 'walmart',
     ],
 
     /*
@@ -32,10 +34,7 @@ return [
         'images-na.ssl-images-amazon.com' => 'amazon_in',
         'images-eu.ssl-images-amazon.com' => 'amazon_in',
         'images-fe.ssl-images-amazon.com' => 'amazon_in',
-        'rukminim1.flixcart.com' => 'flipkart',
-        'rukminim2.flixcart.com' => 'flipkart',
-        'rukminim3.flixcart.com' => 'flipkart',
-        'img1a.flixcart.com' => 'flipkart',
+        'i5.walmartimages.com' => 'walmart',
     ],
 
     /*

@@ -18,10 +18,11 @@ export function cleanText(value, maxLength = MAX_FIELD_LENGTH) {
     return collapsed.slice(0, maxLength);
 }
 
-// Hosts a clickable link (order/product/invoice) may point to - kept to the
-// primary marketplace domains only, since these are what the user's browser
-// actually navigates to from "Open on Amazon/Flipkart" buttons.
-const ALLOWED_LINK_HOSTS = new Set(['www.amazon.in', 'amazon.in', 'www.flipkart.com', 'flipkart.com']);
+// Hosts a clickable link (order/product/invoice/billing) may point to -
+// kept to the primary site domains only, since these are what the user's
+// browser actually navigates to from "Open on Amazon" / "Manage on Claude"
+// buttons.
+const ALLOWED_LINK_HOSTS = new Set(['www.amazon.in', 'amazon.in', 'claude.ai', 'www.walmart.com', 'walmart.com']);
 
 // Real product images are served from separate CDN subdomains, not the
 // primary site - e.g. a real amazon.in order-history page's <img> src is
@@ -34,10 +35,7 @@ const ALLOWED_IMAGE_HOSTS = new Set([
     'images-na.ssl-images-amazon.com',
     'images-eu.ssl-images-amazon.com',
     'images-fe.ssl-images-amazon.com',
-    'rukminim1.flixcart.com',
-    'rukminim2.flixcart.com',
-    'rukminim3.flixcart.com',
-    'img1a.flixcart.com',
+    'i5.walmartimages.com',
 ]);
 
 export function sanitizeUrlOrNull(value, { isImage = false } = {}) {

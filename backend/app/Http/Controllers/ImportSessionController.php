@@ -7,9 +7,11 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 use Savv\Enums\ImportSessionStatus;
+use Savv\Enums\ProviderKind;
 use Savv\Jobs\ConfirmImportSession;
 use Savv\Models\ImportPreview;
 use Savv\Models\ImportSession;
+use Savv\Models\SubscriptionPreview;
 use Savv\Services\ImportSessionService;
 use Savv\Services\RunnerClient;
 
@@ -70,10 +72,29 @@ class ImportSessionController extends Controller
     {
         $this->authorize('view', $importSession);
 
+        if ($importSession->provider->kind() === ProviderKind::Subscription) {
+            $previews = $importSession->subscriptionPreviews()->orderBy('id')->get();
+
+            return response()->json([
+                'status' => $importSession->status->value,
+                'kind' => 'subscription',
+                'previews' => $previews->map(fn (SubscriptionPreview $p) => [
+                    'public_id' => $p->public_id,
+                    'key' => $p->provider_subscription_key,
+                    'selected' => $p->selected,
+                    'observed_at' => $p->observed_at?->toIso8601String(),
+                    'parser_version' => $p->parser_version,
+                    'subscription' => $p->normalized_payload,
+                    'warnings' => $p->field_warnings,
+                ]),
+            ]);
+        }
+
         $previews = $importSession->previews()->orderBy('id')->get();
 
         return response()->json([
             'status' => $importSession->status->value,
+            'kind' => 'orders',
             'previews' => $previews->map(fn (ImportPreview $p) => [
                 'public_id' => $p->public_id,
                 'provider_order_id' => $p->provider_order_id,
@@ -99,14 +120,22 @@ class ImportSessionController extends Controller
             return back()->withErrors(['confirm' => 'This import session has no preview ready to confirm.']);
         }
 
-        $selectedIds = ImportPreview::query()
-            ->where('import_session_id', $importSession->id)
-            ->whereIn('public_id', $validated['selected'])
-            ->pluck('id')
-            ->all();
+        $isSubscription = $importSession->provider->kind() === ProviderKind::Subscription;
+
+        $selectedIds = $isSubscription
+            ? SubscriptionPreview::query()
+                ->where('import_session_id', $importSession->id)
+                ->whereIn('public_id', $validated['selected'])
+                ->pluck('id')
+                ->all()
+            : ImportPreview::query()
+                ->where('import_session_id', $importSession->id)
+                ->whereIn('public_id', $validated['selected'])
+                ->pluck('id')
+                ->all();
 
         if (empty($selectedIds)) {
-            return back()->withErrors(['confirm' => 'Select at least one order to import.']);
+            return back()->withErrors(['confirm' => 'Select at least one item to import.']);
         }
 
         $importSession->forceFill(['status' => ImportSessionStatus::Importing])->save();

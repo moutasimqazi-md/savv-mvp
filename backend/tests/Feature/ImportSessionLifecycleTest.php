@@ -53,7 +53,7 @@ class ImportSessionLifecycleTest extends TestCase
         $service->start($user, Provider::AmazonIn, $this->consentFor($user));
 
         $this->expectException(\RuntimeException::class);
-        $service->start($user, Provider::Flipkart, $this->consentFor($user, Provider::Flipkart));
+        $service->start($user, Provider::Claude, $this->consentFor($user, Provider::Claude));
     }
 
     public function test_a_user_cannot_view_another_users_import_session(): void
@@ -128,5 +128,60 @@ class ImportSessionLifecycleTest extends TestCase
         $session->forceFill(['view_token_expires_at' => now()->subSecond()])->save();
 
         $this->assertFalse($session->verifyViewToken($raw));
+    }
+
+    public function test_refresh_status_advances_starting_to_ready_once_the_browser_is_up(): void
+    {
+        Http::fake(['127.0.0.1:3010/*' => Http::response(['status' => 'ready'], 200)]);
+
+        $session = ImportSession::create([
+            'user_id' => User::factory()->create()->id,
+            'provider' => Provider::AmazonIn,
+            'status' => ImportSessionStatus::Starting,
+            'expires_at' => now()->addMinutes(15),
+            'last_activity_at' => now(),
+        ]);
+
+        $refreshed = app(ImportSessionService::class)->refreshStatus($session);
+
+        $this->assertSame(ImportSessionStatus::Ready, $refreshed->status);
+    }
+
+    public function test_refresh_status_never_overwrites_a_more_specific_in_progress_status(): void
+    {
+        // Regression guard: the runner's own internal status stays 'ready'
+        // even right after a scan completes, which must never clobber
+        // Laravel's own richer status (e.g. preview_ready) back down.
+        Http::fake(['127.0.0.1:3010/*' => Http::response(['status' => 'ready'], 200)]);
+
+        $session = ImportSession::create([
+            'user_id' => User::factory()->create()->id,
+            'provider' => Provider::AmazonIn,
+            'status' => ImportSessionStatus::PreviewReady,
+            'expires_at' => now()->addMinutes(15),
+            'last_activity_at' => now(),
+        ]);
+
+        $refreshed = app(ImportSessionService::class)->refreshStatus($session);
+
+        $this->assertSame(ImportSessionStatus::PreviewReady, $refreshed->status);
+    }
+
+    public function test_refresh_status_marks_failed_when_the_runner_process_is_gone(): void
+    {
+        Http::fake(['127.0.0.1:3010/*' => Http::response(['status' => 'not_found'], 200)]);
+
+        $session = ImportSession::create([
+            'user_id' => User::factory()->create()->id,
+            'provider' => Provider::AmazonIn,
+            'status' => ImportSessionStatus::Ready,
+            'expires_at' => now()->addMinutes(15),
+            'last_activity_at' => now(),
+        ]);
+
+        $refreshed = app(ImportSessionService::class)->refreshStatus($session);
+
+        $this->assertSame(ImportSessionStatus::Failed, $refreshed->status);
+        $this->assertSame('runner_process_lost', $refreshed->safe_error_code);
     }
 }

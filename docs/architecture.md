@@ -1,7 +1,7 @@
 # Architecture
 
-Savv MVP is a demonstration, not an official Amazon or Flipkart integration.
-It has two runtime components plus a database:
+Savv MVP is a demonstration, not an official Amazon or Anthropic
+integration. It has two runtime components plus a database:
 
 ```
 User's browser
@@ -16,37 +16,42 @@ Node.js runner (/runner) --- Playwright --- isolated Chromium
 ## Request flow for one import
 
 1. User signs in to Savv MVP (Laravel session auth) and opens **Connections**.
-2. User picks Amazon India or Flipkart, reads the consent notice, and accepts it.
-   Laravel records a `Consent` row.
+2. User picks Amazon India (orders) or Claude (subscription), reads the
+   consent notice, and accepts it. Laravel records a `Consent` row. Which
+   provider maps to which kind of data is `Savv\Enums\Provider::kind()`
+   (`ProviderKind::Orders` or `ProviderKind::Subscription`) - it drives
+   which validator/confirmation pipeline runs in steps 9-10 below.
 3. Laravel creates an `ImportSession` row (status `requested`) and calls the
    runner's `POST /internal/sessions` over a signed loopback HTTP request.
 4. The runner launches one isolated, persistent-profile Chromium instance
    (headed - visible either on the developer's own screen locally, or over
    Xvfb+x11vnc+noVNC in the Ubuntu demo deployment) and navigates it to the
-   marketplace's order-history page.
+   site's order-history or billing page.
 5. Laravel's `/imports/{id}` page embeds `/imports/{id}/browser` in an
    iframe. In the Ubuntu deployment that page connects a noVNC viewer over a
    same-origin websocket proxy, authenticated with a single-use, short-lived
    view token; locally it just tells the developer to look at the window
    that opened on their own screen.
-6. The user logs into the marketplace **directly inside that isolated
-   browser** - Savv never sees the password or OTP.
-7. User clicks "I'm logged in - scan my orders". Laravel dispatches
+6. The user logs into the site **directly inside that isolated browser** -
+   Savv never sees the password or OTP.
+7. User clicks "I'm logged in - scan". Laravel dispatches
    `ScanImportSession` onto the `imports` queue, which calls the runner's
    `POST /internal/sessions/{id}/scan`.
 8. The runner checks the current page's hostname against its navigation
-   allowlist, runs the provider parser's `supportsCurrentPage()` /
-   `extractOrders()`, sanitizes everything, and returns normalized JSON -
-   never raw HTML, never credentials.
+   allowlist, runs the provider parser's `supportsCurrentPage()` and either
+   `extractOrders()` or `extractSubscriptions()`, sanitizes everything, and
+   returns normalized JSON - never raw HTML, never credentials.
 9. Laravel re-validates the JSON independently
-   (`Savv\Services\ImportPreviewValidator`) and stores it as `ImportPreview`
-   rows. The user reviews the preview and selects what to import.
+   (`Savv\Services\ImportPreviewValidator` for orders,
+   `Savv\Services\SubscriptionPreviewValidator` for subscriptions) and
+   stores it as `ImportPreview` or `SubscriptionPreview` rows. The user
+   reviews the preview and selects what to import.
 10. On confirm, Laravel dispatches `ConfirmImportSession`, which merges the
-    selected previews into permanent `Order`/`OrderItem`/`Shipment`/
-    `OrderReturn`/`Refund`/`Invoice` rows inside one DB transaction
-    (`Savv\Services\ImportConfirmationService`), applying merge precedence
-    (`Savv\Services\MergeService`) and deduplication
-    (`Savv\Services\DeduplicationService`).
+    selected previews into permanent rows inside one DB transaction -
+    `Order`/`OrderItem`/`Shipment`/`OrderReturn`/`Refund`/`Invoice` via
+    `Savv\Services\ImportConfirmationService`, or `Subscription` via
+    `Savv\Services\SubscriptionConfirmationService` - applying merge
+    precedence (`Savv\Services\MergeService`) and deduplication.
 11. Laravel dispatches `TerminateImportSession`, which asks the runner to
     stop the browser and then marks the session terminated. The runner
     deletes the temporary Chromium profile directory.
@@ -80,7 +85,9 @@ real headless Chromium against the synthetic fixtures in `runner/fixtures`).
 ## What's deliberately NOT built
 
 See [limitations.md](limitations.md) for the full list - notably: no
-automatic multi-page pagination beyond 5 pages, no CAPTCHA handling, no
-account-level manual-entry/CSV-import UI in this pass (the underlying
-`user_corrections` table exists for future use), and real Amazon/Flipkart
-selectors are not implemented (see [parser-maintenance.md](parser-maintenance.md)).
+automatic multi-page pagination beyond 5 pages, no CAPTCHA/bot-check
+handling (claude.ai's real sign-in page has shown a Cloudflare challenge in
+testing - the user completes it personally, same as any other challenge),
+no account-level manual-entry/CSV-import UI in this pass (the underlying
+`user_corrections` table exists for future use), and no real Claude
+selectors are implemented (see [parser-maintenance.md](parser-maintenance.md)).

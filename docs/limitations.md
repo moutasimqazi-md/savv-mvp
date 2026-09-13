@@ -1,9 +1,38 @@
 # Limitations
 
-This is a demonstration, not an official Amazon or Flipkart integration, and
-not a claim of complete marketplace coverage. It does not guarantee
+This is a demonstration, not an official Amazon, Walmart, or Anthropic
+integration, and not a claim of complete coverage. It does not guarantee
 continuous synchronization, guaranteed return eligibility, or protection
-from marketplace account challenges/suspensions.
+from account challenges/suspensions. Flipkart support was removed; Amazon
+India and Walmart (orders) and Claude (subscription) are the three
+supported sites.
+
+## Walmart parser is synthetic/heuristic only, and walmart.com showed a bot check
+
+Same situation as Claude below: `runner/src/parsers/walmart/index.js` has
+never been built against real walmart.com markup, only invented fixtures
+(`runner/fixtures/walmart/`) plus the shared order heuristic. In manual
+testing, navigating to `https://www.walmart.com/orders` in the isolated
+browser surfaced a "Robot or human?" bot-check page before reaching the
+actual order history. As with every other challenge, Savv never attempts to
+solve or bypass it - the user completes it personally inside the isolated
+browser.
+
+## Claude parser is synthetic/heuristic only, and claude.ai showed a bot check
+
+Like the original Amazon parser, `runner/src/parsers/claude/index.js` has
+never been built against real claude.ai markup - only invented fixtures
+(`runner/fixtures/claude/`) plus the generic subscription heuristic
+(`runner/src/parsers/shared/subscriptionHeuristic.js`). In manual testing,
+navigating to `https://claude.ai/settings/billing` in the isolated browser
+surfaced a Cloudflare "Just a moment..." challenge before reaching the
+actual billing page. Per the project's own rules, Savv never attempts to
+solve or bypass this - the user must click through it personally inside the
+isolated browser window, the same way they would for any other challenge.
+Until real, sanitized claude.ai fixtures are supplied (see
+[parser-maintenance.md](parser-maintenance.md)), a real scan will most
+likely fall through to the heuristic path or report "could not safely read
+this page version," same as Amazon did before its real-selector pass.
 
 ## Verified working (as of first local run)
 

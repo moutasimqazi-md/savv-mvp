@@ -1,48 +1,129 @@
-<x-layout title="Import - Savv MVP">
+@php
+    use Savv\Enums\ImportSessionStatus;
+
+    $status = $importSession->status;
+    $isSubscription = $importSession->provider->kind()->value === 'subscription';
+    $noun = $isSubscription ? 'subscription' : 'orders';
+
+    $importStep = match ($status) {
+        ImportSessionStatus::Requested, ImportSessionStatus::Starting => 0,
+        ImportSessionStatus::Ready, ImportSessionStatus::AwaitingLogin, ImportSessionStatus::ReadyToScan => 1,
+        ImportSessionStatus::Scanning => 2,
+        ImportSessionStatus::PreviewReady, ImportSessionStatus::Importing => 3,
+        ImportSessionStatus::Completed => 4,
+        default => 1,
+    };
+@endphp
+
+<x-layout title="Import - Savv">
+
     <div data-import-session
          data-status-url="{{ route('imports.show', $importSession) }}"
          data-preview-url="{{ route('imports.preview', $importSession) }}">
 
-        <h1 class="mb-2 text-xl font-semibold">
-            Importing from {{ $importSession->provider->label() }}
-        </h1>
-        <p class="mb-3 text-sm text-gray-500">
-            Status: <span data-session-status class="font-medium">{{ $importSession->status->value }}</span>
-            - expires {{ $importSession->expires_at->diffForHumans() }}
-        </p>
+        <div class="flex flex-wrap items-start justify-between gap-4">
+            <div>
+                <x-ui.provider-chip :provider="$importSession->provider" />
+                <h1 class="mt-3 text-2xl font-bold tracking-tight">
+                    Importing from {{ $importSession->provider->label() }}
+                </h1>
+                <p class="mt-1.5 flex flex-wrap items-center gap-2 text-sm text-savv-gray">
+                    <img data-session-spinner src="{{ asset('images/design/spinner.png') }}" alt=""
+                         class="h-4 w-4 animate-spin" @if ($status->isTerminal()) hidden @endif>
+                    <span>Status</span>
+                    <span data-session-status class="font-semibold text-savv-darkgray">{{ $status->value }}</span>
+                    <span class="text-savv-graylight">|</span>
+                    <span>expires {{ $importSession->expires_at->diffForHumans() }}</span>
+                </p>
+            </div>
 
-        <div data-session-error @if (! $importSession->safe_error_code) hidden @endif
-             class="mb-6 rounded border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-800">
-            {{ $importSession->safe_error_code }}
-        </div>
-
-        <div class="mb-6 overflow-hidden rounded border border-gray-200 bg-white">
-            <iframe src="{{ route('imports.browser', $importSession) }}" class="h-[480px] w-full" title="Temporary browser"></iframe>
-        </div>
-
-        <div class="mb-8 flex flex-wrap gap-3">
-            <form method="POST" action="{{ route('imports.scan', $importSession) }}">
-                @csrf
-                <button type="submit" class="rounded bg-gray-900 px-4 py-2 text-sm text-white">
-                    I'm logged in - scan my orders
-                </button>
-            </form>
             <form method="POST" action="{{ route('imports.cancel', $importSession) }}">
                 @csrf
-                <button type="submit" class="rounded border border-red-300 px-4 py-2 text-sm text-red-700">
-                    Cancel import
-                </button>
+                <x-ui.button type="submit" variant="danger" size="sm">Cancel import</x-ui.button>
             </form>
         </div>
 
-        <h2 class="mb-3 text-lg font-semibold">Preview</h2>
-        <form data-confirm-form method="POST" action="{{ route('imports.confirm', $importSession) }}" hidden>
-            @csrf
-            <div data-preview-list class="mb-4 rounded border border-gray-200 bg-white px-4"></div>
-            <button type="submit" class="rounded bg-gray-900 px-4 py-2 text-sm text-white">Import selected orders</button>
-        </form>
-        <p class="text-sm text-gray-500" data-preview-empty>
-            Nothing to preview yet. Log in above and press "I'm logged in - scan my orders".
-        </p>
+        {{-- Progress --}}
+        <x-ui.card class="mt-6" padding="px-5 py-6">
+            <x-ui.stepper :steps="['Browser', 'Log in', 'Scan', 'Review', 'Done']" :current="$importStep" />
+        </x-ui.card>
+
+        <div data-session-error @if (! $importSession->safe_error_code) hidden @endif
+             class="mt-5 flex items-start gap-2.5 rounded-xl border border-savv-error/30 bg-savv-error/5 px-4 py-3 text-sm text-savv-error">
+            <img src="{{ asset('images/design/error.png') }}" alt="" class="mt-0.5 h-5 w-5 shrink-0">
+            <span data-session-error-text class="font-medium">{{ $importSession->safe_error_code }}</span>
+        </div>
+
+        <div class="mt-5 grid gap-5 lg:grid-cols-3">
+
+            {{-- Browser --}}
+            <div class="lg:col-span-2">
+                <div class="overflow-hidden rounded-2xl border border-savv-graylight bg-white">
+                    <div class="flex items-center gap-2 border-b border-savv-graylight bg-savv-light px-4 py-2.5">
+                        <div class="flex gap-1.5">
+                            <span class="h-2.5 w-2.5 rounded-full bg-savv-error/60"></span>
+                            <span class="h-2.5 w-2.5 rounded-full bg-savv-orange/60"></span>
+                            <span class="h-2.5 w-2.5 rounded-full bg-savv-green/60"></span>
+                        </div>
+                        <span class="ml-2 truncate text-xs font-medium text-savv-gray">
+                            Temporary isolated browser &middot; deleted when this import ends
+                        </span>
+                    </div>
+                    <iframe src="{{ route('imports.browser', $importSession) }}" class="h-[480px] w-full" title="Temporary browser"></iframe>
+                </div>
+
+                <form method="POST" action="{{ route('imports.scan', $importSession) }}" class="mt-4">
+                    @csrf
+                    <x-ui.button type="submit" variant="accent">
+                        I'm logged in - scan my {{ $noun }}
+                    </x-ui.button>
+                </form>
+            </div>
+
+            {{-- Preview --}}
+            <div class="space-y-5">
+                <div class="overflow-hidden rounded-2xl border border-savv-graylight bg-white">
+                    <div class="border-b border-savv-graylight px-5 py-4">
+                        <h2 class="text-sm font-bold">Preview</h2>
+                        <p class="mt-0.5 text-xs text-savv-gray">Nothing is saved until you confirm.</p>
+                    </div>
+
+                    <form data-confirm-form method="POST" action="{{ route('imports.confirm', $importSession) }}" hidden>
+                        @csrf
+                        <div data-preview-list class="max-h-[360px] overflow-y-auto px-5"></div>
+                        <div class="border-t border-savv-graylight p-4">
+                            <x-ui.button type="submit" size="sm" class="w-full">
+                                Import selected {{ $noun }}
+                            </x-ui.button>
+                        </div>
+                    </form>
+
+                    <div data-preview-empty class="px-5 py-10 text-center">
+                        <img src="{{ asset('images/design/illustration-tracking.png') }}" alt="" class="mx-auto h-12 w-12">
+                        <p class="mt-3 text-xs leading-relaxed text-savv-gray">
+                            Nothing to preview yet. Log in on the left, then press
+                            &ldquo;scan my {{ $noun }}&rdquo;.
+                        </p>
+                    </div>
+                </div>
+
+                <x-ui.card class="bg-savv-light">
+                    <h2 class="text-xs font-bold uppercase tracking-wider text-savv-gray">Your safety</h2>
+                    <ul class="mt-3 space-y-2 text-xs leading-relaxed">
+                        @foreach ([
+                            'Your password and OTP go only to the site itself.',
+                            'Savv never stores cookies or session tokens.',
+                            'The browser profile is destroyed when this ends.',
+                        ] as $point)
+                            <li class="flex gap-2">
+                                <img src="{{ asset('images/design/check-circle.png') }}" alt="" class="mt-0.5 h-3.5 w-3.5 shrink-0">
+                                {{ $point }}
+                            </li>
+                        @endforeach
+                    </ul>
+                </x-ui.card>
+            </div>
+        </div>
     </div>
+
 </x-layout>

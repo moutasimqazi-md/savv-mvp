@@ -1,7 +1,7 @@
 {
     "name": "savv/savv-mvp",
     "type": "project",
-    "description": "Savv MVP - consumer order, shipment, return, and refund dashboard for Amazon India and Flipkart imports.",
+    "description": "Savv MVP - consumer order, shipment, return, refund, and subscription dashboard for Amazon India and Claude imports.",
     "keywords": ["savv", "laravel", "orders"],
     "license": "proprietary",
     "require": {

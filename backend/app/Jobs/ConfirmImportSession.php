@@ -8,9 +8,12 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Savv\Enums\ImportSessionStatus;
+use Savv\Enums\ProviderKind;
 use Savv\Models\ImportPreview;
 use Savv\Models\ImportSession;
+use Savv\Models\SubscriptionPreview;
 use Savv\Services\ImportConfirmationService;
+use Savv\Services\SubscriptionConfirmationService;
 
 class ConfirmImportSession implements ShouldQueue
 {
@@ -30,7 +33,7 @@ class ConfirmImportSession implements ShouldQueue
         private readonly array $selectedPreviewIds,
     ) {}
 
-    public function handle(ImportConfirmationService $confirmation): void
+    public function handle(ImportConfirmationService $orderConfirmation, SubscriptionConfirmationService $subscriptionConfirmation): void
     {
         $session = ImportSession::find($this->importSessionId);
 
@@ -38,12 +41,21 @@ class ConfirmImportSession implements ShouldQueue
             return;
         }
 
-        $selected = ImportPreview::query()
-            ->where('import_session_id', $session->id)
-            ->whereIn('id', $this->selectedPreviewIds)
-            ->get();
+        if ($session->provider->kind() === ProviderKind::Subscription) {
+            $selected = SubscriptionPreview::query()
+                ->where('import_session_id', $session->id)
+                ->whereIn('id', $this->selectedPreviewIds)
+                ->get();
 
-        $confirmation->confirm($session, $selected);
+            $subscriptionConfirmation->confirm($session, $selected);
+        } else {
+            $selected = ImportPreview::query()
+                ->where('import_session_id', $session->id)
+                ->whereIn('id', $this->selectedPreviewIds)
+                ->get();
+
+            $orderConfirmation->confirm($session, $selected);
+        }
 
         $session->forceFill(['status' => ImportSessionStatus::Completed])->save();
 

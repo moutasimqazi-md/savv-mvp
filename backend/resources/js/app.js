@@ -12,6 +12,8 @@ function initImportSessionPage() {
     const previewUrl = root.dataset.previewUrl;
     const statusEl = document.querySelector('[data-session-status]');
     const errorEl = document.querySelector('[data-session-error]');
+    const errorTextEl = document.querySelector('[data-session-error-text]');
+    const spinnerEl = document.querySelector('[data-session-spinner]');
     const previewList = document.querySelector('[data-preview-list]');
     const previewEmpty = document.querySelector('[data-preview-empty]');
     const confirmForm = document.querySelector('[data-confirm-form]');
@@ -41,19 +43,23 @@ function initImportSessionPage() {
 
             if (errorEl) {
                 if (data.safe_error_code) {
-                    errorEl.textContent = ERROR_MESSAGES[data.safe_error_code] ?? 'Something went wrong with this import.';
+                    if (errorTextEl) errorTextEl.textContent = ERROR_MESSAGES[data.safe_error_code] ?? 'Something went wrong with this import.';
                     errorEl.hidden = false;
                 } else {
                     errorEl.hidden = true;
                 }
             }
 
+            const terminalStatuses = ['completed', 'cancelled', 'expired', 'failed', 'terminated'];
+
+            if (spinnerEl) spinnerEl.hidden = terminalStatuses.includes(data.status);
+
             if (['preview_ready', 'importing', 'completed', 'cancelled', 'expired', 'failed', 'terminated'].includes(data.status)) {
                 if (data.status === 'preview_ready') {
                     await loadPreview();
                 }
 
-                if (['completed', 'cancelled', 'expired', 'failed', 'terminated'].includes(data.status)) {
+                if (terminalStatuses.includes(data.status)) {
                     polling = false;
                     return;
                 }
@@ -75,22 +81,33 @@ function initImportSessionPage() {
 
         data.previews.forEach((preview) => {
             const row = document.createElement('label');
-            row.className = 'flex items-start gap-3 border-b border-gray-200 py-3';
+            row.className = 'flex cursor-pointer items-start gap-3 border-b border-savv-graylight py-3 last:border-0';
 
             const checkbox = document.createElement('input');
             checkbox.type = 'checkbox';
             checkbox.name = 'selected[]';
             checkbox.value = preview.public_id;
             checkbox.checked = preview.selected;
-            checkbox.className = 'mt-1';
+            checkbox.className = 'mt-1 rounded border-savv-graylight text-savv-orange focus:ring-savv-orange';
 
             const details = document.createElement('div');
-            const total = preview.order.total ? `₹${(preview.order.total / 100).toFixed(2)}` : 'amount unknown';
-            details.innerHTML = `
-                <div class="font-medium">${escapeHtml(preview.provider_order_id)} - ${escapeHtml(total)}</div>
-                <div class="text-sm text-gray-500">${escapeHtml(preview.order.normalized_status || 'unknown')} - ${(preview.order.items || []).length} item(s)</div>
-                ${preview.warnings && preview.warnings.length ? `<div class="text-sm text-amber-600">${preview.warnings.map(escapeHtml).join('<br>')}</div>` : ''}
-            `;
+
+            if (data.kind === 'subscription') {
+                const s = preview.subscription;
+                const price = s.price ? `${s.currency} ${(s.price / 100).toFixed(2)} / ${s.billing_cycle}` : 'price unknown';
+                details.innerHTML = `
+                    <div class="font-medium">${escapeHtml(s.plan_name)} - ${escapeHtml(price)}</div>
+                    <div class="text-sm text-savv-gray">${escapeHtml(s.normalized_status || 'unknown')}${s.renewal_at ? ' - renews ' + escapeHtml(s.renewal_at.slice(0, 10)) : ''}</div>
+                    ${preview.warnings && preview.warnings.length ? `<div class="text-sm text-savv-orange">${preview.warnings.map(escapeHtml).join('<br>')}</div>` : ''}
+                `;
+            } else {
+                const total = preview.order.total ? `₹${(preview.order.total / 100).toFixed(2)}` : 'amount unknown';
+                details.innerHTML = `
+                    <div class="font-medium">${escapeHtml(preview.provider_order_id)} - ${escapeHtml(total)}</div>
+                    <div class="text-sm text-savv-gray">${escapeHtml(preview.order.normalized_status || 'unknown')} - ${(preview.order.items || []).length} item(s)</div>
+                    ${preview.warnings && preview.warnings.length ? `<div class="text-sm text-savv-orange">${preview.warnings.map(escapeHtml).join('<br>')}</div>` : ''}
+                `;
+            }
 
             row.appendChild(checkbox);
             row.appendChild(details);

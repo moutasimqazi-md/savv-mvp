@@ -4,7 +4,6 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
 import { amazonInParser } from '../src/parsers/amazon-in/index.js';
-import { flipkartParser } from '../src/parsers/flipkart/index.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const fixturesDir = path.resolve(__dirname, '../fixtures');
@@ -45,36 +44,6 @@ test('amazon-in parser does not claim the unknown layout fixture', async () => {
     });
 });
 
-test('amazon-in fixture-tagged and real-selector markup never appears on the flipkart fixture', async () => {
-    await withPage(fixtureUrl('flipkart', 'order.html'), async (page) => {
-        assert.equal(await page.locator('.savv-fixture-order').count(), 0);
-        assert.equal(await page.locator('.order-card.js-order-card').count(), 0);
-    });
-});
-
-test('flipkart parser supports its own synthetic fixtures', async () => {
-    for (const name of ['order.html', 'delivered.html', 'cancelled.html', 'return.html', 'refund.html']) {
-        await withPage(fixtureUrl('flipkart', name), async (page) => {
-            assert.equal(await flipkartParser.supportsCurrentPage(page), true, `expected support for ${name}`);
-        });
-    }
-});
-
-test('flipkart parser does not claim the unknown layout fixture', async () => {
-    // See the note on the equivalent amazon-in test above - the heuristic
-    // fallback is intentionally provider-agnostic; host separation happens
-    // upstream in sessionManager/navigationGuard, not inside a parser.
-    await withPage(fixtureUrl('unknown-layout.html'), async (page) => {
-        assert.equal(await flipkartParser.supportsCurrentPage(page), false);
-    });
-});
-
-test('flipkart fixture-tagged markup never appears on the amazon-in fixture', async () => {
-    await withPage(fixtureUrl('amazon-in', 'order.html'), async (page) => {
-        assert.equal(await page.locator('.savv-fixture-fk-order').count(), 0);
-    });
-});
-
 test('amazon-in parser extracts a fully-formed synthetic order', async () => {
     await withPage(fixtureUrl('amazon-in', 'return.html'), async (page) => {
         const orders = await amazonInParser.extractOrders(page);
@@ -88,21 +57,6 @@ test('amazon-in parser extracts a fully-formed synthetic order', async () => {
         assert.equal(order.returns[0].provider_return_id, 'AMZ-SYNTH-RET-0004');
 
         const { valid } = amazonInParser.validate(order);
-        assert.equal(valid, true);
-    });
-});
-
-test('flipkart parser extracts a fully-formed synthetic refund order', async () => {
-    await withPage(fixtureUrl('flipkart', 'refund.html'), async (page) => {
-        const orders = await flipkartParser.extractOrders(page);
-        assert.equal(orders.length, 1);
-
-        const [order] = orders;
-        assert.equal(order.provider_order_id, 'FK-SYNTH-0005');
-        assert.equal(order.refunds.length, 1);
-        assert.equal(order.refunds[0].amount, '399.00');
-
-        const { valid } = flipkartParser.validate(order);
         assert.equal(valid, true);
     });
 });

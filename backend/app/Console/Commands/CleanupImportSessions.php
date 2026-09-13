@@ -6,6 +6,7 @@ use Illuminate\Console\Command;
 use Savv\Enums\ImportSessionStatus;
 use Savv\Models\ImportPreview;
 use Savv\Models\ImportSession;
+use Savv\Models\SubscriptionPreview;
 use Savv\Services\AuditLogger;
 use Savv\Services\ImportSessionService;
 
@@ -45,13 +46,13 @@ class CleanupImportSessions extends Command
         // Safety net: any leftover unconfirmed preview rows belonging to a
         // terminal session older than the retention window.
         $purgeAfter = (int) config('savv.retention.expired_import_session_purge_after_minutes', 60);
+        $terminalSessionIds = ImportSession::query()
+            ->whereIn('status', array_map(fn ($s) => $s->value, ImportSessionStatus::terminalStatuses()))
+            ->where('updated_at', '<', now()->subMinutes($purgeAfter))
+            ->pluck('id');
 
-        $purgedPreviews = ImportPreview::query()
-            ->whereIn('import_session_id', ImportSession::query()
-                ->whereIn('status', array_map(fn ($s) => $s->value, ImportSessionStatus::terminalStatuses()))
-                ->where('updated_at', '<', now()->subMinutes($purgeAfter))
-                ->pluck('id'))
-            ->delete();
+        $purgedPreviews = ImportPreview::query()->whereIn('import_session_id', $terminalSessionIds)->delete()
+            + SubscriptionPreview::query()->whereIn('import_session_id', $terminalSessionIds)->delete();
 
         if ($purgedPreviews > 0) {
             $this->info("Purged {$purgedPreviews} stale preview row(s).");

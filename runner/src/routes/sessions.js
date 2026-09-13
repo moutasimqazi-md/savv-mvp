@@ -2,6 +2,7 @@ import { Router } from 'express';
 import {
     createSession, getSessionStatus, scanSession, stopSession, getSessionHealth, registerViewToken,
 } from '../sessionManager.js';
+import { isKnownProvider } from '../parsers/registry.js';
 
 export const sessionsRouter = Router();
 
@@ -12,7 +13,7 @@ sessionsRouter.post('/', async (req, res) => {
         return res.status(400).json({ error: 'invalid_session_id' });
     }
 
-    if (provider !== 'amazon_in' && provider !== 'flipkart') {
+    if (typeof provider !== 'string' || !isKnownProvider(provider)) {
         return res.status(400).json({ error: 'invalid_provider' });
     }
 

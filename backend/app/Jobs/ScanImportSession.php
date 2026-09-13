@@ -10,10 +10,12 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
 use Savv\Enums\ImportSessionStatus;
 use Savv\Enums\Provider;
+use Savv\Enums\ProviderKind;
 use Savv\Models\ImportSession;
 use Savv\Services\AuditLogger;
 use Savv\Services\ImportPreviewValidator;
 use Savv\Services\RunnerClient;
+use Savv\Services\SubscriptionPreviewValidator;
 
 class ScanImportSession implements ShouldQueue
 {
@@ -35,15 +37,17 @@ class ScanImportSession implements ShouldQueue
             return;
         }
 
+        $provider = Provider::from($session->provider->value);
+
         try {
             $result = $runner->scan($session->public_id);
 
             // The runner reports a structural problem (unsupported page
             // layout, disallowed host) as a 200 response with an `error`
-            // key, not an HTTP error - it already safely produced zero
-            // orders rather than guessing. Surface it as a real failure
-            // with its specific safe error code, instead of silently
-            // showing the user an empty "no orders found" preview.
+            // key, not an HTTP error - it already safely produced nothing
+            // rather than guessing. Surface it as a real failure with its
+            // specific safe error code, instead of silently showing the
+            // user an empty preview.
             if (isset($result['error'])) {
                 $session->forceFill([
                     'status' => ImportSessionStatus::Failed,
@@ -57,7 +61,11 @@ class ScanImportSession implements ShouldQueue
                 return;
             }
 
-            $validated = ImportPreviewValidator::validateScanResult($result['orders'] ?? [], Provider::from($session->provider->value));
+            if ($provider->kind() === ProviderKind::Subscription) {
+                $this->storeSubscriptionPreviews($session, $result, $provider);
+            } else {
+                $this->storeOrderPreviews($session, $result, $provider);
+            }
         } catch (\Throwable $e) {
             // The technical message is safe to log (no order/personal data
             // ever passes through this exception) but must never reach the
@@ -74,6 +82,14 @@ class ScanImportSession implements ShouldQueue
             return;
         }
 
+        $session->forceFill(['status' => ImportSessionStatus::PreviewReady])->save();
+        $session->touchActivity();
+    }
+
+    private function storeOrderPreviews(ImportSession $session, array $result, Provider $provider): void
+    {
+        $validated = ImportPreviewValidator::validateScanResult($result['orders'] ?? [], $provider);
+
         $session->previews()->delete();
 
         foreach ($validated['orders'] as $order) {
@@ -87,13 +103,32 @@ class ScanImportSession implements ShouldQueue
             ]);
         }
 
-        $session->forceFill([
-            'status' => ImportSessionStatus::PreviewReady,
-        ])->save();
-        $session->touchActivity();
-
         AuditLogger::record('import_session.scan_completed', $session->user_id, ImportSession::class, $session->id, [
             'order_count' => count($validated['orders']),
+        ]);
+    }
+
+    private function storeSubscriptionPreviews(ImportSession $session, array $result, Provider $provider): void
+    {
+        $validated = SubscriptionPreviewValidator::validateScanResult($result['subscriptions'] ?? [], $provider);
+
+        $session->subscriptionPreviews()->delete();
+
+        foreach ($validated['subscriptions'] as $subscription) {
+            $key = $subscription['provider_subscription_id'] ?: hash('sha256', $subscription['plan_name']);
+
+            $session->subscriptionPreviews()->create([
+                'provider_subscription_key' => $key,
+                'selected' => true,
+                'parser_version' => $result['parserVersion'] ?? null,
+                'observed_at' => $subscription['observed_at'],
+                'normalized_payload' => $subscription,
+                'field_warnings' => $validated['warnings'],
+            ]);
+        }
+
+        AuditLogger::record('import_session.scan_completed', $session->user_id, ImportSession::class, $session->id, [
+            'subscription_count' => count($validated['subscriptions']),
         ]);
     }
 
