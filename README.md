@@ -1,4 +1,4 @@
-# Savv MVP
+# Edited Savv MVP
 
 Savv MVP is a **demonstration**, not an official Amazon or Flipkart
 integration. A signed-in user starts a temporary, isolated remote browser
