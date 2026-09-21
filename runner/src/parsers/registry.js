@@ -1,13 +1,13 @@
-import { amazonInParser } from './amazon-in/index.js';
+import { amazonUsParser } from './amazon-us/index.js';
 import { walmartParser } from './walmart/index.js';
 import { claudeParser } from './claude/index.js';
 import { assertImplementsParserInterface } from './shared/parserInterface.js';
 
-assertImplementsParserInterface(amazonInParser);
+assertImplementsParserInterface(amazonUsParser);
 assertImplementsParserInterface(walmartParser);
 
 const PARSERS = {
-    amazon_in: amazonInParser,
+    amazon_us: amazonUsParser,
     walmart: walmartParser,
 };
 
@@ -17,7 +17,7 @@ const SUBSCRIPTION_PARSERS = {
 
 /** Which "kind" of parser a provider uses - keep in sync with Savv\Enums\ProviderKind. */
 const PROVIDER_KIND = {
-    amazon_in: 'orders',
+    amazon_us: 'orders',
     walmart: 'orders',
     claude: 'subscription',
 };

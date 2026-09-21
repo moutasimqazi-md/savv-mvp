@@ -91,7 +91,7 @@ non-synthetic markup (see "Parsers are synthetic-fixture-only" below).
 
 `runner/src/parsers/amazon-in` and `runner/src/parsers/flipkart` are built
 and tested only against invented fixtures in `runner/fixtures/`. Neither
-recognizes a real amazon.in or flipkart.com page today - see
+recognizes a real amazon.com or flipkart.com page today - see
 [parser-maintenance.md](parser-maintenance.md) for how to extend them once
 sanitized real fixtures are available. Until then, every real-world scan
 attempt will correctly stop with the "could not safely read this page

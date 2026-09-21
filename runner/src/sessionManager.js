@@ -13,7 +13,7 @@ const MAX_PAGES_PER_SCAN = Number(process.env.RUNNER_MAX_PAGES_PER_SCAN ?? 5);
 const PAGE_NAV_DELAY_MS = Number(process.env.RUNNER_PAGE_NAVIGATION_DELAY_MS ?? 1500);
 
 const HOME_URL_BY_PROVIDER = {
-    amazon_in: 'https://www.amazon.in/gp/css/order-history',
+    amazon_us: 'https://www.amazon.com/gp/css/order-history',
     claude: 'https://claude.ai/settings/billing',
     walmart: 'https://www.walmart.com/orders',
 };

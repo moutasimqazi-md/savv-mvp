@@ -19,7 +19,8 @@
 
     <div data-import-session
          data-status-url="{{ route('imports.show', $importSession) }}"
-         data-preview-url="{{ route('imports.preview', $importSession) }}">
+         data-preview-url="{{ route('imports.preview', $importSession) }}"
+         data-noun="{{ $noun }}">
 
         <div class="flex flex-wrap items-start justify-between gap-4">
             <div>
@@ -37,9 +38,14 @@
                 </p>
             </div>
 
-            <form method="POST" action="{{ route('imports.cancel', $importSession) }}">
+            <form data-cancel-form method="POST" action="{{ route('imports.cancel', $importSession) }}"
+                  @if ($status->isTerminal()) hidden @endif
+                  onsubmit="return confirm('Cancel this import and close the temporary browser?');">
                 @csrf
-                <x-ui.button type="submit" variant="danger" size="sm">Cancel import</x-ui.button>
+                <x-ui.button type="submit" variant="danger" size="sm">
+                    <x-ui.icon name="x" class="h-4 w-4" />
+                    Exit &amp; cancel session
+                </x-ui.button>
             </form>
         </div>
 
@@ -54,7 +60,41 @@
             <span data-session-error-text class="font-medium">{{ $importSession->safe_error_code }}</span>
         </div>
 
-        <div class="mt-5 grid gap-5 lg:grid-cols-3">
+        @php
+            $isDone = $status === ImportSessionStatus::Completed;
+            // Once scanning starts, the temporary browser has already done its
+            // job (login) and the runner closes it - it is not an error, but
+            // showing the live viewer (or its "not ready" fallback) at that
+            // point reads as broken. Swap to a plain progress message instead.
+            $browserPhaseOver = in_array($status, [
+                ImportSessionStatus::Scanning,
+                ImportSessionStatus::PreviewReady,
+                ImportSessionStatus::Importing,
+                ImportSessionStatus::Completed,
+            ], true);
+            $processingText = match ($status) {
+                ImportSessionStatus::Scanning => "Scanning your {$noun}...",
+                ImportSessionStatus::PreviewReady => 'Scan complete - review the results on the right.',
+                ImportSessionStatus::Importing => "Saving your {$noun}...",
+                default => 'Finishing up...',
+            };
+        @endphp
+
+        <div data-session-complete @unless ($isDone) hidden @endunless
+             class="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-savv-green/30 bg-savv-green/10 px-4 py-3 text-sm text-green-800">
+            <div class="flex items-center gap-2.5">
+                <x-ui.icon name="check-circle" class="h-5 w-5 shrink-0 text-savv-green" />
+                <span class="font-medium">Import complete &mdash; your {{ $noun }} {{ $isSubscription ? 'was' : 'were' }} saved.</span>
+            </div>
+            <div class="flex gap-2">
+                <x-ui.button :href="$isSubscription ? route('subscriptions.index') : route('orders.index')" variant="primary" size="sm">
+                    View {{ $noun }}
+                </x-ui.button>
+                <x-ui.button :href="route('connections.index')" variant="outline" size="sm">Start another import</x-ui.button>
+            </div>
+        </div>
+
+        <div class="mt-5 grid gap-5 lg:grid-cols-3" data-import-body @if ($isDone) hidden @endif>
 
             {{-- Browser --}}
             <div class="lg:col-span-2">
@@ -69,10 +109,19 @@
                             Temporary isolated browser &middot; deleted when this import ends
                         </span>
                     </div>
-                    <iframe src="{{ route('imports.browser', $importSession) }}" class="h-[480px] w-full" title="Temporary browser"></iframe>
+                    <iframe data-browser-live @if ($browserPhaseOver) hidden @endif
+                            src="{{ route('imports.browser', $importSession) }}" class="h-[480px] w-full" title="Temporary browser"></iframe>
+
+                    <div data-browser-processing @unless ($browserPhaseOver) hidden @endunless
+                         class="flex h-[480px] flex-col items-center justify-center gap-3 bg-[#1b1b1b] px-8 text-center">
+                        <img src="{{ asset('images/design/spinner.png') }}" alt="" class="h-8 w-8 animate-spin">
+                        <p data-browser-processing-text class="text-sm font-medium text-white">{{ $processingText }}</p>
+                        <p class="text-xs text-[#8D8D8D]">The temporary browser has already closed - this part happens on our side.</p>
+                    </div>
                 </div>
 
-                <form method="POST" action="{{ route('imports.scan', $importSession) }}" class="mt-4">
+                <form data-scan-form method="POST" action="{{ route('imports.scan', $importSession) }}"
+                      class="mt-4" @if ($browserPhaseOver) hidden @endif>
                     @csrf
                     <x-ui.button type="submit" variant="accent">
                         I'm logged in - scan my {{ $noun }}

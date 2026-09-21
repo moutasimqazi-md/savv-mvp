@@ -16,7 +16,7 @@
                 </h1>
 
                 <p class="mx-auto mt-5 max-w-xl text-sm leading-relaxed text-white/90 sm:text-base">
-                    Bring your own Amazon India and Walmart order history together with subscriptions
+                    Bring your own Amazon US and Walmart order history together with subscriptions
                     like Claude Pro - imported by you, in a temporary isolated browser.
                 </p>
 
@@ -40,7 +40,7 @@
                             <div class="flex items-center gap-3">
                                 <img src="{{ asset('images/design/package.png') }}" alt="" class="h-9 w-9">
                                 <div>
-                                    <div class="text-sm font-semibold">Amazon India</div>
+                                    <div class="text-sm font-semibold">Amazon US</div>
                                     <div class="text-xs text-savv-gray">Order #12-3456789</div>
                                 </div>
                             </div>
@@ -76,7 +76,7 @@
     <section class="mx-auto max-w-5xl px-5 py-16">
         <div class="grid gap-4 sm:grid-cols-3">
             @foreach ([
-                ['image' => 'package.png', 'title' => 'Order tracking', 'body' => 'Deliveries, returns and refunds from Amazon India and Walmart, normalised into one timeline.'],
+                ['image' => 'package.png', 'title' => 'Order tracking', 'body' => 'Deliveries, returns and refunds from Amazon US and Walmart, normalised into one timeline.'],
                 ['image' => 'credit-card.png', 'title' => 'Subscription clarity', 'body' => 'See what renews next and what it costs, alongside everything else you spend.'],
                 ['image' => 'hero-badge.png', 'title' => 'You stay in control', 'body' => 'No stored passwords, OTPs, cookies or sessions. Export or delete everything at any time.'],
             ] as $feature)
@@ -99,7 +99,7 @@
 
             <div class="mt-10 grid gap-6 sm:grid-cols-4">
                 @foreach ([
-                    ['step' => '01', 'title' => 'Pick a site', 'body' => 'Choose Amazon India, Walmart or Claude and accept the consent notice.'],
+                    ['step' => '01', 'title' => 'Pick a site', 'body' => 'Choose Amazon US, Walmart or Claude and accept the consent notice.'],
                     ['step' => '02', 'title' => 'Log in yourself', 'body' => 'A temporary isolated browser opens. Your credentials go only to that site.'],
                     ['step' => '03', 'title' => 'Scan', 'body' => 'Savv reads the page you are already looking at - nothing else.'],
                     ['step' => '04', 'title' => 'Review & import', 'body' => 'You approve each row before anything is saved to your account.'],

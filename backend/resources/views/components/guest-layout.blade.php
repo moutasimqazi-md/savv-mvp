@@ -34,7 +34,7 @@
                         <div class="flex items-center gap-3">
                             <img src="{{ asset('images/design/package.png') }}" alt="" class="h-8 w-8">
                             <div>
-                                <div class="text-sm font-semibold">Amazon India</div>
+                                <div class="text-sm font-semibold">Amazon US</div>
                                 <div class="text-xs text-savv-gray">Arriving tomorrow</div>
                             </div>
                         </div>

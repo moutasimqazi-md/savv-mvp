@@ -16,7 +16,7 @@ Node.js runner (/runner) --- Playwright --- isolated Chromium
 ## Request flow for one import
 
 1. User signs in to Savv MVP (Laravel session auth) and opens **Connections**.
-2. User picks Amazon India (orders) or Claude (subscription), reads the
+2. User picks Amazon US (orders) or Claude (subscription), reads the
    consent notice, and accepts it. Laravel records a `Consent` row. Which
    provider maps to which kind of data is `Savv\Enums\Provider::kind()`
    (`ProviderKind::Orders` or `ProviderKind::Subscription`) - it drives

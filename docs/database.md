@@ -17,7 +17,7 @@ run automatically, and the real password is never committed.
 | `users` | Accounts. Argon2id password hashes. |
 | `password_reset_tokens`, `sessions`, `cache`, `cache_locks`, `jobs`, `job_batches`, `failed_jobs` | Laravel's own database-backed auth/session/cache/queue infrastructure. |
 | `consents` | Per-provider, versioned consent acceptance record. |
-| `provider_connections` | A user's enablement of Amazon India (orders) or Claude (subscription). |
+| `provider_connections` | A user's enablement of Amazon US (orders) or Claude (subscription). |
 | `import_sessions` | One temporary isolated-browser import attempt. Never stores cookies, passwords, OTPs, browser-profile contents, auth headers, or complete HTML - see the column list below. |
 | `import_previews` | Unconfirmed, normalized order scan results shown to the user before import. Deleted on cancel/expiry/completion/cleanup. |
 | `subscription_previews` | Same as `import_previews`, for subscription scans (Claude) - keyed by `provider_subscription_key` instead of `provider_order_id`. |

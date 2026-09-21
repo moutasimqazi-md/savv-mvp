@@ -1,5 +1,5 @@
 /**
- * Every provider parser (amazon-in, flipkart) must implement this shape.
+ * Every provider parser (amazon-us, walmart, claude) must implement this shape.
  * `page` is a Playwright Page already navigated to a supported order page.
  *
  * @typedef {object} SavvParser

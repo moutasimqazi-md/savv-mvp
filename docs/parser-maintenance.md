@@ -7,7 +7,7 @@ Each parser now has three extraction paths, tried in order:
 1. **Fixture-based** (`.savv-fixture-*` / `.savv-fixture-fk-*` markers) -
    exists purely for the test suite (`runner/fixtures/`), invented data.
 2. **Real selectors** - `amazon-in/index.js`'s `extractRealOrders()` is built
-   against real amazon.in "Your Orders" markup (`order-card`,
+   against real amazon.com "Your Orders" markup (`order-card`,
    `yohtmlc-order-id`, `order-header__header-list-item`,
    `yohtmlc-product-title`, `item-box`,
    `yohtmlc-shipment-status-primaryText`), confirmed against a sanitized
@@ -79,7 +79,7 @@ When adding real selectors:
    never return a raw string or unchecked URL. Pass
    `sanitizeUrlOrNull(url, { isImage: true })` for a `product_image_url` -
    real product images are served from a separate CDN host (e.g.
-   `m.media-amazon.com`, not `www.amazon.in`), which the default (link)
+   `m.media-amazon.com`, not `www.amazon.com`), which the default (link)
    allowlist correctly rejects. Never widen the default link allowlist
    itself to work around this - only `isImage: true` should ever accept a
    CDN host, since link fields are what the user's browser actually

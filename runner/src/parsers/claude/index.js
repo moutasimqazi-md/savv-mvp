@@ -2,7 +2,7 @@
  * Claude (claude.ai) subscription parser - PROVISIONAL / SYNTHETIC FIXTURES
  * ONLY.
  *
- * Unlike the amazon-in parser, this has no real-selector path: it has been
+ * Unlike the amazon-us parser, this has no real-selector path: it has been
  * built only against the synthetic fixtures in /runner/fixtures/claude/*.html
  * (invented `.savv-fixture-*` markers, invented plan names and prices). It
  * does NOT use real claude.ai DOM selectors, because none have been

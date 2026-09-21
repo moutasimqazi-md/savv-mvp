@@ -28,7 +28,7 @@ const MAX_CANDIDATES = 100;
  * self-contained function with no references to anything outside it.
  */
 function scanPageForOrderCandidates([maxElements, maxCandidates]) {
-    const CURRENCY_RE = /(?:₹|Rs\.?|INR)\s?[\d,]+(?:\.\d{1,2})?/;
+    const CURRENCY_RE = /(?:₹|Rs\.?|INR|\$|USD)\s?[\d,]+(?:\.\d{1,2})?/;
     const DATE_RES = [
         // "19 August 2026" (Amazon)
         /\b\d{1,2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?,?\s+\d{4}\b/i,
@@ -197,7 +197,7 @@ export function buildHeuristicOrders(groups, { cleanText, sanitizeUrlOrNull, isE
             provider_order_id: cleanText(String(providerOrderId), 100),
             order_date: parseHeuristicDate(first.dateText),
             original_status: first.statusPhrase ? cleanText(first.statusPhrase) : null,
-            currency: 'INR',
+            currency: parseCurrency(first.priceText),
             total: parseAmount(first.priceText),
             official_order_url: null,
             observed_at: new Date().toISOString(),
@@ -215,6 +215,18 @@ function parseAmount(text) {
     if (!text) return null;
     const cleaned = text.replace(/[^\d.]/g, '');
     return cleaned === '' ? null : cleaned;
+}
+
+/**
+ * Derives an ISO currency code from whichever symbol/code the shared
+ * CURRENCY_RE matched, rather than assuming one marketplace's currency -
+ * this heuristic fallback is used by every "orders" provider, not just one
+ * region's Amazon.
+ */
+function parseCurrency(text) {
+    if (!text) return 'USD';
+    if (/[₹]|Rs\.?|INR/i.test(text)) return 'INR';
+    return 'USD';
 }
 
 function parseHeuristicDate(text) {

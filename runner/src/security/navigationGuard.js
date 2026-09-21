@@ -8,11 +8,9 @@
  */
 
 const ALLOWED_HOSTS_BY_PROVIDER = {
-    amazon_in: [
-        'www.amazon.in',
-        'amazon.in',
-        // Amazon's normal sign-in flow can redirect through this host.
+    amazon_us: [
         'www.amazon.com',
+        'amazon.com',
     ],
     claude: [
         'claude.ai',

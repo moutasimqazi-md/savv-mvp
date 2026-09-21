@@ -1,3 +1,11 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Tailwind's display utilities (flex, grid, ...) share the [hidden]
+   attribute's specificity and load after the browser's default stylesheet,
+   so an element with both `hidden` and e.g. `flex` stays visible unless
+   this wins the tie explicitly. */
+[hidden] {
+    display: none !important;
+}

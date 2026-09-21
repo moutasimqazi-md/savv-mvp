@@ -106,7 +106,7 @@
                 @empty
                     <x-ui.empty
                         title="No orders yet"
-                        description="Connect Amazon India or Walmart to import your order history into Savv.">
+                        description="Connect Amazon US or Walmart to import your order history into Savv.">
                         <x-slot:action>
                             <x-ui.button :href="route('connections.index')" variant="accent" size="sm">Connect a site</x-ui.button>
                         </x-slot:action>

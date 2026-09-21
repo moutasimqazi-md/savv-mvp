@@ -10,8 +10,8 @@ return [
     | rejected in import payloads and blocked from runner navigation.
     */
     'allowed_marketplace_hosts' => [
-        'amazon.in' => 'amazon_in',
-        'www.amazon.in' => 'amazon_in',
+        'amazon.com' => 'amazon_us',
+        'www.amazon.com' => 'amazon_us',
         'claude.ai' => 'claude',
         'walmart.com' => 'walmart',
         'www.walmart.com' => 'walmart',
@@ -22,18 +22,18 @@ return [
     | Image hosts
     |--------------------------------------------------------------------
     | Real product images are served from separate CDN subdomains, not the
-    | primary site (e.g. a real amazon.in order-history page's <img> src is
-    | m.media-amazon.com, never www.amazon.in). Images are never navigated
+    | primary site (e.g. a real amazon.com order-history page's <img> src is
+    | m.media-amazon.com, never www.amazon.com). Images are never navigated
     | to by clicking, so this list is only consulted for image fields
     | (MarketplaceUrlValidator::isAllowed($url, isImage: true)) - it must
     | never be merged into the link allowlist used for clickable order/
     | product/invoice URLs.
     */
     'allowed_image_hosts' => [
-        'm.media-amazon.com' => 'amazon_in',
-        'images-na.ssl-images-amazon.com' => 'amazon_in',
-        'images-eu.ssl-images-amazon.com' => 'amazon_in',
-        'images-fe.ssl-images-amazon.com' => 'amazon_in',
+        'm.media-amazon.com' => 'amazon_us',
+        'images-na.ssl-images-amazon.com' => 'amazon_us',
+        'images-eu.ssl-images-amazon.com' => 'amazon_us',
+        'images-fe.ssl-images-amazon.com' => 'amazon_us',
         'i5.walmartimages.com' => 'walmart',
     ],
 

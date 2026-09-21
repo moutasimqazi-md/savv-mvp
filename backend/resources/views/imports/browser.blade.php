@@ -39,7 +39,21 @@
             font-weight: 700;
             color: #8D8D8D;
         }
-        [data-rbi-canvas] { width: 100%; height: 100vh; }
+        [data-rbi-canvas] { width: 100%; height: 100vh; position: relative; }
+        [data-rbi-status] {
+            position: absolute;
+            inset: 0;
+            z-index: 2;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            background: #1b1b1b;
+        }
+        [data-rbi-status] img { width: 28px; height: 28px; animation: rbi-spin 1s linear infinite; }
+        @keyframes rbi-spin { to { transform: rotate(360deg); } }
+        [data-rbi-status][hidden] { display: none !important; }
     </style>
 </head>
 <body>
@@ -55,7 +69,12 @@
     @elseif ($viewToken)
         <div data-rbi-viewer
              data-ws-url="{{ (str_starts_with(config('app.url'), 'https') ? 'wss://' : 'ws://') . request()->getHost() . '/rbi/' . $importSession->public_id . '?token=' . urlencode($viewToken) }}">
-            <div data-rbi-canvas></div>
+            <div data-rbi-canvas>
+                <div data-rbi-status>
+                    <img src="{{ asset('images/design/spinner.png') }}" alt="">
+                    <p data-rbi-status-text class="status">Connecting</p>
+                </div>
+            </div>
         </div>
     @else
         <div class="msg">

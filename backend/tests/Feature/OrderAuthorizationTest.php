@@ -17,7 +17,7 @@ class OrderAuthorizationTest extends TestCase
     {
         return Order::create([
             'user_id' => $owner->id,
-            'provider' => Provider::AmazonIn,
+            'provider' => Provider::AmazonUs,
             'provider_order_id' => 'AMZ-SYNTH-0001',
             'normalized_status' => NormalizedStatus::Delivered,
             'currency' => 'INR',

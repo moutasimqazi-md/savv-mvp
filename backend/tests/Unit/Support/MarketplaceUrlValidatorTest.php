@@ -9,13 +9,13 @@ class MarketplaceUrlValidatorTest extends TestCase
 {
     public function test_allows_https_amazon_and_claude_links(): void
     {
-        $this->assertTrue(MarketplaceUrlValidator::isAllowed('https://www.amazon.in/dp/SYNTH1'));
+        $this->assertTrue(MarketplaceUrlValidator::isAllowed('https://www.amazon.com/dp/SYNTH1'));
         $this->assertTrue(MarketplaceUrlValidator::isAllowed('https://claude.ai/settings/billing'));
     }
 
     public function test_rejects_http_scheme(): void
     {
-        $this->assertFalse(MarketplaceUrlValidator::isAllowed('http://www.amazon.in/dp/SYNTH1'));
+        $this->assertFalse(MarketplaceUrlValidator::isAllowed('http://www.amazon.com/dp/SYNTH1'));
     }
 
     public function test_rejects_javascript_and_data_urls(): void
@@ -31,7 +31,7 @@ class MarketplaceUrlValidatorTest extends TestCase
 
     public function test_rejects_lookalike_hosts(): void
     {
-        $this->assertFalse(MarketplaceUrlValidator::isAllowed('https://www.amazon.in.evil.com/dp/SYNTH1'));
+        $this->assertFalse(MarketplaceUrlValidator::isAllowed('https://www.amazon.com.evil.com/dp/SYNTH1'));
     }
 
     public function test_rejects_null_and_empty(): void
@@ -44,8 +44,8 @@ class MarketplaceUrlValidatorTest extends TestCase
     {
         $this->assertNull(MarketplaceUrlValidator::sanitizeOrNull('https://evil.example.com/'));
         $this->assertSame(
-            'https://www.amazon.in/dp/SYNTH1',
-            MarketplaceUrlValidator::sanitizeOrNull('https://www.amazon.in/dp/SYNTH1'),
+            'https://www.amazon.com/dp/SYNTH1',
+            MarketplaceUrlValidator::sanitizeOrNull('https://www.amazon.com/dp/SYNTH1'),
         );
     }
 

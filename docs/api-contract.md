@@ -60,7 +60,7 @@ lock-step on the string-to-sign format.
 | GET | `/internal/sessions/{id}/health` | - | `{ok, status, uptimeMs, idleMs}` |
 
 `sessionId` must match `^[A-Za-z0-9_-]{10,64}$` (a ULID) and `provider` must
-be `amazon_in` or `flipkart` - anything else is `400`. An unknown session ID
+be `amazon_us` or `flipkart` - anything else is `400`. An unknown session ID
 returns `404` (`scan`) or `{status: "not_found"}` (`GET` endpoints); `stop`
 on an unknown/already-stopped session is a no-op `200` (idempotent).
 
@@ -84,7 +84,7 @@ and any key containing a credential/session-shaped substring):
   "total": "1499.00",
   "expected_delivery_at": null,
   "delivered_at": "2026-03-15",
-  "official_order_url": "https://www.amazon.in/gp/css/order-details?orderID=AMZ-SYNTH-0001",
+  "official_order_url": "https://www.amazon.com/gp/css/order-details?orderID=AMZ-SYNTH-0001",
   "observed_at": "2026-03-15T10:00:00Z",
   "items": [{
     "provider_item_id": null,
@@ -93,8 +93,8 @@ and any key containing a credential/session-shaped substring):
     "quantity": 1,
     "unit_price": "1499.00",
     "line_total": "1499.00",
-    "product_image_url": "https://www.amazon.in/images/synthetic-mouse.jpg",
-    "official_product_url": "https://www.amazon.in/dp/SYNTH0001"
+    "product_image_url": "https://www.amazon.com/images/synthetic-mouse.jpg",
+    "official_product_url": "https://www.amazon.com/dp/SYNTH0001"
   }],
   "shipments": [], "returns": [], "refunds": [], "invoices": []
 }

@@ -29,7 +29,7 @@ class AccountDeletionTest extends TestCase
         $user = User::factory()->create(['password' => Hash::make('correct-password')]);
         Order::create([
             'user_id' => $user->id,
-            'provider' => Provider::AmazonIn,
+            'provider' => Provider::AmazonUs,
             'provider_order_id' => 'AMZ-SYNTH-0001',
             'normalized_status' => NormalizedStatus::Delivered,
             'currency' => 'INR',
@@ -48,7 +48,7 @@ class AccountDeletionTest extends TestCase
         $user = User::factory()->create();
         Order::create([
             'user_id' => $user->id,
-            'provider' => Provider::AmazonIn,
+            'provider' => Provider::AmazonUs,
             'provider_order_id' => 'AMZ-SYNTH-0001',
             'normalized_status' => NormalizedStatus::Delivered,
             'currency' => 'INR',

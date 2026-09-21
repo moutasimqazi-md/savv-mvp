@@ -25,7 +25,7 @@ class ImportConfirmationServiceTest extends TestCase
     {
         return ImportSession::create([
             'user_id' => $user->id,
-            'provider' => Provider::AmazonIn,
+            'provider' => Provider::AmazonUs,
             'status' => ImportSessionStatus::PreviewReady,
             'expires_at' => now()->addMinutes(15),
         ]);
@@ -45,7 +45,7 @@ class ImportConfirmationServiceTest extends TestCase
     private function baseOrderPayload(array $overrides = []): array
     {
         return array_merge([
-            'provider' => 'amazon_in',
+            'provider' => 'amazon_us',
             'provider_order_id' => 'AMZ-SYNTH-0001',
             'order_date' => now()->toIso8601String(),
             'original_status' => 'Delivered',

@@ -34,7 +34,7 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/connections', [ConnectionsController::class, 'index'])->name('connections.index');
     Route::post('/connections/{provider}/start', [ConnectionsController::class, 'start'])
-        ->whereIn('provider', ['amazon_in', 'claude', 'walmart'])
+        ->whereIn('provider', ['amazon_us', 'claude', 'walmart'])
         ->middleware('throttle:import-session-start')
         ->name('connections.start');
 

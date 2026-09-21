@@ -22,7 +22,7 @@ class CleanupImportSessionsTest extends TestCase
 
         $session = ImportSession::create([
             'user_id' => User::factory()->create()->id,
-            'provider' => Provider::AmazonIn,
+            'provider' => Provider::AmazonUs,
             'status' => ImportSessionStatus::AwaitingLogin,
             'expires_at' => now()->subMinute(),
             'last_activity_at' => now()->subMinute(),
@@ -41,7 +41,7 @@ class CleanupImportSessionsTest extends TestCase
 
         $session = ImportSession::create([
             'user_id' => User::factory()->create()->id,
-            'provider' => Provider::AmazonIn,
+            'provider' => Provider::AmazonUs,
             'status' => ImportSessionStatus::ReadyToScan,
             'expires_at' => now()->addMinutes(10),
             'last_activity_at' => now()->subMinutes(6),
@@ -58,7 +58,7 @@ class CleanupImportSessionsTest extends TestCase
 
         ImportSession::create([
             'user_id' => User::factory()->create()->id,
-            'provider' => Provider::AmazonIn,
+            'provider' => Provider::AmazonUs,
             'status' => ImportSessionStatus::ReadyToScan,
             'expires_at' => now()->addMinutes(10),
             'last_activity_at' => now(),
@@ -73,7 +73,7 @@ class CleanupImportSessionsTest extends TestCase
     {
         $session = ImportSession::create([
             'user_id' => User::factory()->create()->id,
-            'provider' => Provider::AmazonIn,
+            'provider' => Provider::AmazonUs,
             'status' => ImportSessionStatus::Terminating,
             'expires_at' => now()->addMinutes(10),
         ]);

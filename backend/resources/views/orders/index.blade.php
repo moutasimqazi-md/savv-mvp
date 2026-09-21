@@ -45,7 +45,7 @@
 
             <select name="provider" class="rounded-xl border-savv-graylight text-sm focus:border-savv-orange focus:ring-savv-orange">
                 <option value="">All marketplaces</option>
-                <option value="amazon_in" @selected(request('provider') === 'amazon_in')>Amazon India</option>
+                <option value="amazon_us" @selected(request('provider') === 'amazon_us')>Amazon US</option>
                 <option value="walmart" @selected(request('provider') === 'walmart')>Walmart</option>
             </select>
 
@@ -131,7 +131,7 @@
             <div class="rounded-2xl border border-savv-graylight bg-white">
                 <x-ui.empty
                     title="No orders match these filters"
-                    :description="$hasFilters || $bucket ? 'Try clearing the filters, or import more orders from a connected site.' : 'Connect Amazon India or Walmart to import your order history.'">
+                    :description="$hasFilters || $bucket ? 'Try clearing the filters, or import more orders from a connected site.' : 'Connect Amazon US or Walmart to import your order history.'">
                     <x-slot:action>
                         @if ($hasFilters || $bucket)
                             <x-ui.button :href="route('orders.index')" variant="outline" size="sm">Clear filters</x-ui.button>

@@ -37,8 +37,8 @@ test('walmart parser does not claim the unknown layout fixture', async () => {
     });
 });
 
-test('walmart fixture-tagged markup never appears on the amazon-in fixture', async () => {
-    await withPage(fixtureUrl('amazon-in', 'order.html'), async (page) => {
+test('walmart fixture-tagged markup never appears on the amazon-us fixture', async () => {
+    await withPage(fixtureUrl('amazon-us', 'order.html'), async (page) => {
         assert.equal(await page.locator('.savv-fixture-wm-order').count(), 0);
     });
 });

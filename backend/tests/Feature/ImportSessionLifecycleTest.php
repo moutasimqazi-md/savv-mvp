@@ -16,7 +16,7 @@ class ImportSessionLifecycleTest extends TestCase
 {
     use RefreshDatabase;
 
-    private function consentFor(User $user, Provider $provider = Provider::AmazonIn): Consent
+    private function consentFor(User $user, Provider $provider = Provider::AmazonUs): Consent
     {
         return Consent::create([
             'user_id' => $user->id,
@@ -35,7 +35,7 @@ class ImportSessionLifecycleTest extends TestCase
         $user = User::factory()->create();
         $consent = $this->consentFor($user);
 
-        $session = app(ImportSessionService::class)->start($user, Provider::AmazonIn, $consent);
+        $session = app(ImportSessionService::class)->start($user, Provider::AmazonUs, $consent);
 
         $this->assertSame(ImportSessionStatus::Starting, $session->status);
         $this->assertSame('proc-1', $session->runner_process_ref);
@@ -50,7 +50,7 @@ class ImportSessionLifecycleTest extends TestCase
         $user = User::factory()->create();
         $service = app(ImportSessionService::class);
 
-        $service->start($user, Provider::AmazonIn, $this->consentFor($user));
+        $service->start($user, Provider::AmazonUs, $this->consentFor($user));
 
         $this->expectException(\RuntimeException::class);
         $service->start($user, Provider::Claude, $this->consentFor($user, Provider::Claude));
@@ -63,7 +63,7 @@ class ImportSessionLifecycleTest extends TestCase
 
         $session = ImportSession::create([
             'user_id' => $owner->id,
-            'provider' => Provider::AmazonIn,
+            'provider' => Provider::AmazonUs,
             'status' => ImportSessionStatus::Ready,
             'expires_at' => now()->addMinutes(15),
         ]);
@@ -77,7 +77,7 @@ class ImportSessionLifecycleTest extends TestCase
     {
         $session = ImportSession::create([
             'user_id' => User::factory()->create()->id,
-            'provider' => Provider::AmazonIn,
+            'provider' => Provider::AmazonUs,
             'status' => ImportSessionStatus::Ready,
             'expires_at' => now()->subMinute(),
         ]);
@@ -89,7 +89,7 @@ class ImportSessionLifecycleTest extends TestCase
     {
         $session = ImportSession::create([
             'user_id' => User::factory()->create()->id,
-            'provider' => Provider::AmazonIn,
+            'provider' => Provider::AmazonUs,
             'status' => ImportSessionStatus::Ready,
             'expires_at' => now()->addMinutes(15),
             'last_activity_at' => now()->subMinutes(10),
@@ -103,7 +103,7 @@ class ImportSessionLifecycleTest extends TestCase
     {
         $session = ImportSession::create([
             'user_id' => User::factory()->create()->id,
-            'provider' => Provider::AmazonIn,
+            'provider' => Provider::AmazonUs,
             'status' => ImportSessionStatus::Ready,
             'expires_at' => now()->addMinutes(15),
         ]);
@@ -119,7 +119,7 @@ class ImportSessionLifecycleTest extends TestCase
     {
         $session = ImportSession::create([
             'user_id' => User::factory()->create()->id,
-            'provider' => Provider::AmazonIn,
+            'provider' => Provider::AmazonUs,
             'status' => ImportSessionStatus::Ready,
             'expires_at' => now()->addMinutes(15),
         ]);
@@ -136,7 +136,7 @@ class ImportSessionLifecycleTest extends TestCase
 
         $session = ImportSession::create([
             'user_id' => User::factory()->create()->id,
-            'provider' => Provider::AmazonIn,
+            'provider' => Provider::AmazonUs,
             'status' => ImportSessionStatus::Starting,
             'expires_at' => now()->addMinutes(15),
             'last_activity_at' => now(),
@@ -156,7 +156,7 @@ class ImportSessionLifecycleTest extends TestCase
 
         $session = ImportSession::create([
             'user_id' => User::factory()->create()->id,
-            'provider' => Provider::AmazonIn,
+            'provider' => Provider::AmazonUs,
             'status' => ImportSessionStatus::PreviewReady,
             'expires_at' => now()->addMinutes(15),
             'last_activity_at' => now(),
@@ -173,7 +173,7 @@ class ImportSessionLifecycleTest extends TestCase
 
         $session = ImportSession::create([
             'user_id' => User::factory()->create()->id,
-            'provider' => Provider::AmazonIn,
+            'provider' => Provider::AmazonUs,
             'status' => ImportSessionStatus::Ready,
             'expires_at' => now()->addMinutes(15),
             'last_activity_at' => now(),

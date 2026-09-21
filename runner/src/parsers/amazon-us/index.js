@@ -1,13 +1,13 @@
 /**
- * Amazon India parser.
+ * Amazon US parser.
  *
  * Has three extraction paths, tried in order:
  *
  * 1. Fixture-based (`.savv-fixture-*` markers) - built and tested only
- *    against the synthetic fixtures in /runner/fixtures/amazon-in/*.html.
+ *    against the synthetic fixtures in /runner/fixtures/amazon-us/*.html.
  *    Exists purely for the test suite.
  * 2. Real selectors (extractRealOrders() below) - built against sanitized
- *    real amazon.in "Your Orders" markup (order-card / yohtmlc-order-id /
+ *    real amazon.com "Your Orders" markup (order-card / yohtmlc-order-id /
  *    order-header__header-list-item / yohtmlc-product-title / item-box /
  *    yohtmlc-shipment-status-primaryText). These are Amazon's actual,
  *    long-stable BEM-style class names as of the fixture this was built
@@ -26,11 +26,11 @@
 import { cleanText, sanitizeUrlOrNull, isEmpty, mainPageAttribute } from '../shared/sanitize.js';
 import { findHeuristicCandidates, groupCandidatesIntoOrders, buildHeuristicOrders } from '../shared/heuristicExtract.js';
 
-const PARSER_VERSION = 'amazon-in@0.3.0-real-selectors';
+const PARSER_VERSION = 'amazon-us@0.3.0-real-selectors';
 const MAX_ORDERS = 100;
 const MAX_ITEMS_PER_ORDER = 100;
 
-export const amazonInParser = {
+export const amazonUsParser = {
     getVersion() {
         return PARSER_VERSION;
     },
@@ -65,7 +65,7 @@ export const amazonInParser = {
                 provider_order_id: cleanText(providerOrderId, 100),
                 order_date: parseFixtureDate(orderDateText),
                 original_status: cleanText(statusText),
-                currency: 'INR',
+                currency: 'USD',
                 total: parseFixtureAmount(totalText),
                 official_order_url: sanitizeUrlOrNull(orderUrl),
                 observed_at: new Date().toISOString(),
@@ -153,7 +153,7 @@ export const amazonInParser = {
 
             refunds.push({
                 amount: parseFixtureAmount(amountText),
-                currency: 'INR',
+                currency: 'USD',
                 original_status: cleanText(await textOrNull(refund, '.savv-fixture-refund-status')),
                 initiated_at: parseFixtureDate(await textOrNull(refund, '.savv-fixture-refund-date')),
             });
@@ -182,7 +182,7 @@ export const amazonInParser = {
 };
 
 /**
- * Real amazon.in "Your Orders" page extraction. See the module docblock for
+ * Real amazon.com "Your Orders" page extraction. See the module docblock for
  * which class names this relies on and why `.yohtmlc-recipient` (shipping
  * address) is deliberately never queried.
  *
@@ -223,7 +223,7 @@ async function extractRealOrders(page) {
             provider_order_id: cleanText(raw.orderIdText, 100),
             order_date: parseFixtureDate(raw.orderDateText),
             original_status: status,
-            currency: 'INR',
+            currency: 'USD',
             total: parseFixtureAmount(raw.totalText),
             official_order_url: sanitizeUrlOrNull(raw.orderUrl),
             observed_at: new Date().toISOString(),

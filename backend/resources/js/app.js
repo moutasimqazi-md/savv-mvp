@@ -10,6 +10,7 @@ function initImportSessionPage() {
 
     const statusUrl = root.dataset.statusUrl;
     const previewUrl = root.dataset.previewUrl;
+    const noun = root.dataset.noun || 'orders';
     const statusEl = document.querySelector('[data-session-status]');
     const errorEl = document.querySelector('[data-session-error]');
     const errorTextEl = document.querySelector('[data-session-error-text]');
@@ -17,6 +18,23 @@ function initImportSessionPage() {
     const previewList = document.querySelector('[data-preview-list]');
     const previewEmpty = document.querySelector('[data-preview-empty]');
     const confirmForm = document.querySelector('[data-confirm-form]');
+    const completeEl = document.querySelector('[data-session-complete]');
+    const importBodyEl = document.querySelector('[data-import-body]');
+    const cancelFormEl = document.querySelector('[data-cancel-form]');
+    const browserLiveEl = document.querySelector('[data-browser-live]');
+    const browserProcessingEl = document.querySelector('[data-browser-processing]');
+    const browserProcessingTextEl = document.querySelector('[data-browser-processing-text]');
+    const scanFormEl = document.querySelector('[data-scan-form]');
+
+    // Once scanning starts the temporary browser has already closed (its
+    // only job was login) - keep in sync with $browserPhaseOver in
+    // imports/show.blade.php.
+    const BROWSER_PHASE_OVER_STATUSES = ['scanning', 'preview_ready', 'importing', 'completed'];
+    const PROCESSING_TEXT = {
+        scanning: `Scanning your ${noun}...`,
+        preview_ready: 'Scan complete - review the results on the right.',
+        importing: `Saving your ${noun}...`,
+    };
 
     // Keep in sync with the safe_error_code values set in
     // app/Jobs/ScanImportSession.php, app/Services/ImportSessionService.php,
@@ -54,6 +72,15 @@ function initImportSessionPage() {
 
             if (spinnerEl) spinnerEl.hidden = terminalStatuses.includes(data.status);
 
+            if (BROWSER_PHASE_OVER_STATUSES.includes(data.status)) {
+                if (browserLiveEl) browserLiveEl.hidden = true;
+                if (browserProcessingEl) browserProcessingEl.hidden = false;
+                if (browserProcessingTextEl && PROCESSING_TEXT[data.status]) {
+                    browserProcessingTextEl.textContent = PROCESSING_TEXT[data.status];
+                }
+                if (scanFormEl) scanFormEl.hidden = true;
+            }
+
             if (['preview_ready', 'importing', 'completed', 'cancelled', 'expired', 'failed', 'terminated'].includes(data.status)) {
                 if (data.status === 'preview_ready') {
                     await loadPreview();
@@ -61,6 +88,14 @@ function initImportSessionPage() {
 
                 if (terminalStatuses.includes(data.status)) {
                     polling = false;
+
+                    if (cancelFormEl) cancelFormEl.hidden = true;
+
+                    if (data.status === 'completed') {
+                        if (importBodyEl) importBodyEl.hidden = true;
+                        if (completeEl) completeEl.hidden = false;
+                    }
+
                     return;
                 }
             }
@@ -127,4 +162,12 @@ function initImportSessionPage() {
     poll();
 }
 
-document.addEventListener('DOMContentLoaded', initImportSessionPage);
+// Deferred `type="module"` scripts can execute after DOMContentLoaded has
+// already fired, in which case that one-shot event never comes again - run
+// immediately if the document is already past "loading" (see the identical
+// fix in rbi-viewer.js).
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initImportSessionPage);
+} else {
+    initImportSessionPage();
+}
